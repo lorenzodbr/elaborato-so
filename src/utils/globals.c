@@ -3,33 +3,48 @@
 #include <unistd.h>
 #include <stdio.h>
 
-void printWelcomeMessage();
+void printWelcomeMessageServer();
+void printWelcomeMessageClient();
 void printLoadingMessage();
 void *loadingSpinner();
 void errExit(const char *msg);
 void printAndFlush(const char *msg);
 void startLoadingSpinner();
+void stopLoadingSpinner();
 
 bool endSpinner = false;
 
-void printWelcomeMessage()
+void printWelcomeMessageServer()
 {
     printf(CLEAR_SCREEN);
-    printf("%s%s\n", KGRN, TRIS_ASCII_ART);
-    printf("%s%s\n", KGRN, CREDITS);
+    printf(BOLD KGRN TRIS_ASCII_ART_SERVER);
+    printf(CREDITS);
+    printf(NO_BOLD KNRM);
+}
+
+void printWelcomeMessageClient()
+{
+    printf(CLEAR_SCREEN);
+    printf(BOLD KGRN TRIS_ASCII_ART_CLIENT);
+    printf(CREDITS);
+    printf(NO_BOLD KNRM);
 }
 
 void printLoadingMessage()
 {
-    printf(LOADING_MESSAGE);
-    fflush(stdout);
-    startLoadingSpinner();
+    printf(LOADING_MESSAGE KGRN);
+    // fflush(stdout);
+    // startLoadingSpinner();
+}
 
-    sleep(3);
+void printLoadingCompleteMessage()
+{
+    printf(KNRM "Caricamento completato.\n");
+}
 
+void stopLoadingSpinner()
+{
     endSpinner = true;
-
-    pthread_exit(NULL);
 }
 
 void startLoadingSpinner()
@@ -69,6 +84,7 @@ void printAndFlush(const char *msg)
 
 void errExit(const char *msg)
 {
+    printAndFlush(KRED ERROR_CHAR);
     perror(msg);
     exit(EXIT_FAILURE);
 }

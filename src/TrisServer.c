@@ -4,29 +4,131 @@
 #include <stdbool.h>
 
 #include "utils/data.c"
-#include "utils/utils.c"
+#include "utils/globals.c"
+#include "utils/shared_memory/shared_memory.c"
+#include "utils/semaphores/semaphores.c"
 
-bool init(int timeout, char playerOneSymbol, char playerTwoSymbol);
+void init();
+void initMatrix();
+void initSemaphores();
+void setAtExitCleanup();
+void waitForPlayers();
+void disposeMatrix();
+void disposeSemaphores();
 
-int main(int argc, char *argv[]){
-    if(argc != N_ARGS){
+int shmId;
+char *matrix;
+int semId;
+
+int timeout;
+char playerOneSymbol;
+char playerTwoSymbol;
+
+int main(int argc, char *argv[])
+{
+    if (argc != N_ARGS)
+    {
         errExit(USAGE_ERROR);
     }
 
-    int timeout = atoi(argv[1]);
-    char playerOneSymbol = argv[2][0];
-    char playerTwoSymbol = argv[3][0];
+    timeout = atoi(argv[1]);
+    playerOneSymbol = argv[2][0];
+    playerTwoSymbol = argv[3][0];
 
-    if(!init(timeout, playerOneSymbol, playerTwoSymbol)){
-        errExit(INIT_ERROR);
-    }
+    init();
+
+    waitForPlayers();
 
     return EXIT_SUCCESS;
 }
 
-bool init(int timeout, char playerOneSymbol, char playerTwoSymbol){
-    printWelcomeMessage();
+void init()
+{
+    // Messages
+    printWelcomeMessageServer();
     printLoadingMessage();
-    return true;
+
+    // Data structures
+    initMatrix();
+    initSemaphores();
+    setAtExitCleanup();
+    printLoadingCompleteMessage();
 }
 
+void initMatrix()
+{
+    shmId = getSharedMemory(MATRIX_SIZE * MATRIX_SIZE * sizeof(char));
+
+#if DEBUG
+    printf(SUCCESS_CHAR "Memoria condivisa ottenuta (ID: %d).\n", shmId);
+#endif
+
+    matrix = (char *)attachSharedMemory(shmId);
+
+#if DEBUG
+    printf(SUCCESS_CHAR "Memoria condivisa agganciata (@ %p).\n", matrix);
+#endif
+
+    for (int i = 0; i < MATRIX_SIZE; i++)
+    {
+        for (int j = 0; j < MATRIX_SIZE; j++)
+        {
+            matrix[i * MATRIX_SIZE + j] = ' ';
+        }
+    }
+
+#if DEBUG
+    printf(SUCCESS_CHAR "Matrice inizializzata.\n");
+#endif
+}
+
+void disposeMatrix()
+{
+    disposeSharedMemory(shmId);
+
+#if DEBUG
+    printf(KGRN SUCCESS_CHAR "Matrice deallocata.\n");
+#endif
+}
+
+void initSemaphores()
+{
+    semId = getSemaphores(1);
+    setSemaphore(semId, 0, 0);
+
+#if DEBUG
+    printf(SUCCESS_CHAR "Semafori inizializzati.\n");
+#endif
+}
+
+void disposeSemaphores()
+{
+    disposeSemaphore(semId);
+
+#if DEBUG
+    printf(SUCCESS_CHAR "Semafori deallocati.\n");
+#endif
+}
+
+void setAtExitCleanup()
+{
+    if (atexit(disposeSemaphores))
+    {
+        errExit("atexit");
+    }
+    if (atexit(disposeMatrix))
+    {
+        errExit("atexit");
+    }
+}
+
+void waitForPlayers()
+{
+    printf("\nAttendo i giocatori...\n");
+    waitSemaphore(semId, 0, 1);
+
+    printf("Un giocatore (%c) è entrato in partita.\n", playerOneSymbol);
+    waitSemaphore(semId, 0, 1);
+
+    printf("Un altro giocatore (%c) è entrato in partita.\nPronti per cominciare.\n\n", playerTwoSymbol);
+}
