@@ -17,7 +17,7 @@ bool endSpinner = false;
 void printWelcomeMessageServer()
 {
     printf(CLEAR_SCREEN);
-    printf(BOLD KGRN TRIS_ASCII_ART_SERVER);
+    printf(BOLD KCYN TRIS_ASCII_ART_SERVER);
     printf(CREDITS);
     printf(NO_BOLD KNRM);
 }
