@@ -10,6 +10,7 @@
 
 void init();
 void notifyPlayerReady();
+void notifyMove();
 void initSharedMemory();
 void initSemaphores();
 void askForInput();
@@ -18,6 +19,7 @@ void initSignals();
 void exitHandler(int sig);
 void checkResults(int sig);
 void serverQuitHandler(int sig);
+void waitForMove();
 
 int semId;
 int matId;
@@ -39,6 +41,8 @@ int main()
     {
         printBoard(matrix);
         askForInput();
+        notifyMove();
+        waitForMove();
     } while (1);
 
     return 0;
@@ -119,11 +123,22 @@ void notifyPlayerReady()
     signalSemaphore(semId, WAIT_FOR_PLAYERS, 1);
 }
 
+void notifyMove()
+{
+    signalSemaphore(semId, WAIT_FOR_MOVE, 2);
+}
+
 void waitForOpponent()
 {
     printf(KNRM "In attesa dell'avversario...\n");
     waitSemaphore(semId, WAIT_FOR_OPPONENT, 1);
     printf("Avversario pronto!\n");
+}
+
+void waitForMove()
+{
+    printf("In attesa della mossa dell'avversario...\n");
+    waitSemaphore(semId, WAIT_FOR_MOVE, 1);
 }
 
 void askForInput()

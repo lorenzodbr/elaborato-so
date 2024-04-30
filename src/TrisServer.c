@@ -22,6 +22,7 @@ void notifyPlayerWhoWon(int playerWhoWon);
 void notifyServerQuit();
 void exitHandler(int sig);
 void playerQuitHandler(int sig);
+void waitForMove();
 
 int matId;
 char *matrix;
@@ -36,6 +37,7 @@ char playerTwoSymbol;
 bool firstCTRLCPressed = false;
 bool started = false;
 int playersCount = 0;
+int turn = 1; // Player 1 starts
 
 int main(int argc, char *argv[])
 {
@@ -54,10 +56,14 @@ int main(int argc, char *argv[])
 
     started = true;
 
+    printf("Inizia il giocatore %d (con PID = %d).\n", turn, pid[turn]);
+
     while (1)
     {
+#ifdef DEBUG
         printBoard(matrix);
-        sleep(100);
+#endif
+        waitForMove();
     }
 
     return EXIT_SUCCESS;
@@ -104,6 +110,10 @@ void initSemaphores()
     values[WAIT_FOR_PLAYERS] = 0;
     values[WAIT_FOR_OPPONENT] = 0;
     values[LOCK] = 1;
+    values[PLAYER_ONE_TURN] = 1;
+    values[PLAYER_TWO_TURN] = 0;
+    values[WAIT_FOR_MOVE] = 0;
+
     setSemaphores(semId, N_SEM, values);
 }
 
@@ -213,4 +223,12 @@ void notifyServerQuit()
 {
     kill(pid[PLAYER_ONE], SIGUSR1);
     kill(pid[PLAYER_TWO], SIGUSR1);
+}
+
+void waitForMove(){
+    printf("In attesa della mossa del giocatore %d (con PID = %d)...\n", turn, pid[turn]);
+    waitSemaphore(semId, WAIT_FOR_MOVE, 1);
+    printf("Mossa ricevuta dal giocatore %d (con PID = %d).\n", turn, pid[turn]);
+    turn = turn == 1 ? 2 : 1;
+    signalSemaphore(semId, turn, 1);
 }

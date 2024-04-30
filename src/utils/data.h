@@ -29,11 +29,16 @@
 
 #define FTOK_PATH ".config"
 
-#define N_SEM 3
+//Semaphore indexes
+#define N_SEM 8
 #define WAIT_FOR_PLAYERS 0
 #define WAIT_FOR_OPPONENT 1
 #define LOCK 2
+#define PLAYER_ONE_TURN 3
+#define PLAYER_TWO_TURN 4
+#define WAIT_FOR_MOVE 5
 
+//PID indexes
 #define SERVER 0
 #define PLAYER_ONE 1
 #define PLAYER_TWO 2

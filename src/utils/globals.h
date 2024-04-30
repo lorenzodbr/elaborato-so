@@ -86,7 +86,7 @@ void printBoard(char *matId)
             printf("\n  -----------\n");
         }
     }
-    printf("\n");
+    printf("\n\n");
 }
 
 void stopLoadingSpinner()

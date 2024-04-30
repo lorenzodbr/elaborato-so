@@ -1,11 +1,10 @@
-Prima di cominciare:
-    Verso il server: 
-        - SIGUSR1 -> Player 1 quitted
-        - SIGUSR2 -> Player 2 quitted
+Verso il server: 
+    - SIGUSR1 -> Player 1 quitted
+    - SIGUSR2 -> Player 2 quitted
+
+Verso il client:
+- SIGUSR1 -> Server quitted
 
 Dopo aver cominciato
-    Verso il server:
-        - SIGUSR1 -> Quit
     Verso il client
-        - SIGUSR1 -> Server quitted
         - SIGUSR2 -> Game ended, results are ready @ shm;
