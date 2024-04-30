@@ -2,17 +2,22 @@
 #include <sys/ipc.h>
 #include <sys/sem.h>
 #include "../data.c"
+#include <errno.h>
 
 int getSemaphores(int nsems);
 void setSemaphore(int semid, int semnum, int value);
 
 int getSemaphores(int nsems)
 {
-    int semId = semget(ftok(FTOK_PATH, PROJ_ID), nsems, IPC_CREAT | 0640);
+    int semId = semget(ftok(FTOK_PATH, MATRIX_ID), nsems, IPC_CREAT | 0640);
     if (semId < 0)
     {
         errExit("semget");
     }
+
+#if DEBUG
+    printf(SUCCESS_CHAR "Semafori ottenuti.\n");
+#endif
 
     return semId;
 }
@@ -23,6 +28,10 @@ void setSemaphore(int semid, int semnum, int value)
     {
         errExit("semctl");
     }
+
+#if DEBUG
+    printf(SUCCESS_CHAR "Semafori inizializzati.\n");
+#endif
 }
 
 void disposeSemaphore(int semid)
@@ -39,7 +48,9 @@ void waitSemaphore(int semid, int semnum, int value)
         value *= -1;
 
     struct sembuf sops = {semnum, value, 0};
-    if (semop(semid, &sops, 1) < 0)
+
+    int semopRet = semop(semid, &sops, 1);
+    if (semopRet < 0 && errno != EINTR)
     {
         errExit("semop");
     }
@@ -48,7 +59,9 @@ void waitSemaphore(int semid, int semnum, int value)
 void signalSemaphore(int semid, int semnum, int value)
 {
     struct sembuf sops = {semnum, value, 0};
-    if (semop(semid, &sops, 1) < 0)
+
+    int semopRet = semop(semid, &sops, 1);
+    if (semopRet < 0 && errno != EINTR)
     {
         errExit("semop");
     }

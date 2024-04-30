@@ -5,8 +5,8 @@
 
 #define DEBUG 1
 
-#define N_ARGS 4
-#define MATRIX_SIZE 3
+#define N_ARGS_SERVER 4
+#define MATRIX_SIDE_LEN 3
 
 #define NEWLINE "\n"
 #define KNRM "\x1B[0m"
@@ -23,8 +23,12 @@
 #define ERROR_CHAR " ✗ "
 #define SUCCESS_CHAR " ✔ "
 
-#define PROJ_ID 163
-#define FTOK_PATH "../.config"
+#define MATRIX_ID 163
+#define PID_ID 011
+#define FTOK_PATH ".config"
+
+#define MATRIX_SIZE MATRIX_SIDE_LEN * MATRIX_SIDE_LEN * sizeof(char) 
+#define PID_SIZE sizeof(pid_t)
 
 #define CLEAR_SCREEN "\033[H\033[J"
 #define LOADING_MESSAGE "\nCaricamento in corso...  \n"
@@ -32,7 +36,7 @@
 #define VERSION "1.0"
 #define TRIS_ASCII_ART_TOP "              ______                     \n\
              /\\__  _\\       __           \n\
-             \\/_/\\ \\/ _ __ /\\_\\    ____  \n\
+             \\/_/\\ \\/ _  __/\\_\\    ____  \n\
                 \\ \\ \\/\\`'__\\/\\ \\  / ,__\\ \n\
                  \\ \\ \\ \\ \\/ \\ \\ \\/\\__, `\\ \n\
                   \\ \\_\\ \\_\\  \\ \\_\\/\\____/ "

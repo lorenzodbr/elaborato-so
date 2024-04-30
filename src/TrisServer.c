@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include <signal.h>
 
 #include "utils/data.c"
 #include "utils/globals.c"
@@ -9,24 +10,32 @@
 #include "utils/semaphores/semaphores.c"
 
 void init();
-void initMatrix();
+void initSharedMemory();
 void initSemaphores();
 void setAtExitCleanup();
 void waitForPlayers();
 void disposeMatrix();
 void disposeSemaphores();
+void initSignals();
+void exitHandler(int sig);
 
-int shmId;
+int matId;
 char *matrix;
+int pidId;
+int *pid;
 int semId;
 
 int timeout;
 char playerOneSymbol;
 char playerTwoSymbol;
 
+bool firstCTRLCPressed = false;
+
+int playersCount = 0;
+
 int main(int argc, char *argv[])
 {
-    if (argc != N_ARGS)
+    if (argc != N_ARGS_SERVER)
     {
         errExit(USAGE_ERROR);
     }
@@ -49,25 +58,18 @@ void init()
     printLoadingMessage();
 
     // Data structures
-    initMatrix();
-    initSemaphores();
     setAtExitCleanup();
+    initSharedMemory();
+    initSemaphores();
+    initSignals();
     printLoadingCompleteMessage();
 }
 
-void initMatrix()
+void initSharedMemory()
 {
-    shmId = getSharedMemory(MATRIX_SIZE * MATRIX_SIZE * sizeof(char));
+    matId = getAndInitSharedMemory(MATRIX_SIZE, MATRIX_ID);
 
-#if DEBUG
-    printf(SUCCESS_CHAR "Memoria condivisa ottenuta (ID: %d).\n", shmId);
-#endif
-
-    matrix = (char *)attachSharedMemory(shmId);
-
-#if DEBUG
-    printf(SUCCESS_CHAR "Memoria condivisa agganciata (@ %p).\n", matrix);
-#endif
+    matrix = (char *)attachSharedMemory(matId);
 
     for (int i = 0; i < MATRIX_SIZE; i++)
     {
@@ -80,11 +82,15 @@ void initMatrix()
 #if DEBUG
     printf(SUCCESS_CHAR "Matrice inizializzata.\n");
 #endif
+
+    pidId = getAndInitSharedMemory(PID_SIZE, PID_ID);
+    pid = (int *)attachSharedMemory(pidId);
+    *pid = getpid();
 }
 
 void disposeMatrix()
 {
-    disposeSharedMemory(shmId);
+    disposeSharedMemory(matId);
 
 #if DEBUG
     printf(KGRN SUCCESS_CHAR "Matrice deallocata.\n");
@@ -95,10 +101,6 @@ void initSemaphores()
 {
     semId = getSemaphores(1);
     setSemaphore(semId, 0, 0);
-
-#if DEBUG
-    printf(SUCCESS_CHAR "Semafori inizializzati.\n");
-#endif
 }
 
 void disposeSemaphores()
@@ -122,13 +124,42 @@ void setAtExitCleanup()
     }
 }
 
+void initSignals(){
+    sigset_t set;
+    sigfillset(&set);
+    sigdelset(&set, SIGINT);
+    sigprocmask(SIG_SETMASK, &set, NULL);
+
+    if(signal(SIGINT, exitHandler) == SIG_ERR){
+        perror("signal");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void exitHandler(int sig){
+    if(firstCTRLCPressed){
+        exit(EXIT_SUCCESS);
+    }
+    firstCTRLCPressed = true;
+    printf("\nPremi CTRL+C di nuovo per uscire.\n");
+}
+
 void waitForPlayers()
 {
     printf("\nAttendo i giocatori...\n");
-    waitSemaphore(semId, 0, 1);
+    do {
+        errno = 0;
+        waitSemaphore(semId, 0, 1);
+    } while(errno == EINTR);
+
+    playersCount++;
 
     printf("Un giocatore (%c) è entrato in partita.\n", playerOneSymbol);
-    waitSemaphore(semId, 0, 1);
+
+    do {
+        errno = 0;
+        waitSemaphore(semId, 0, 1);
+    } while(errno == EINTR);
 
     printf("Un altro giocatore (%c) è entrato in partita.\nPronti per cominciare.\n\n", playerTwoSymbol);
 }
