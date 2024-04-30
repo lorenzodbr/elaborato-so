@@ -1,14 +1,20 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
+#include <errno.h>
+#include <stdbool.h>
 #include "utils/globals.c"
 #include "utils/semaphores/semaphores.c"
 #include "utils/shared_memory/shared_memory.c"
 
 void init();
-void waitForServer();
+void notifyPlayerReady();
 void initSharedMemory();
-void initSemaphore();
+void initSemaphores();
 void askForInput();
+void waitForOpponent();
+void initSignals();
+void exitHandler(int sig);
 
 int semId;
 int matId;
@@ -17,12 +23,18 @@ int pidId;
 char *matrix;
 pid_t *pid;
 
+bool firstCTRLCPressed = false;
+
 int main()
 {
     init();
-    waitForServer();
-
-    askForInput();
+    notifyPlayerReady();
+    waitForOpponent();
+    do
+    {
+        printBoard(matrix);
+        askForInput();
+    } while (1);
     return 0;
 }
 
@@ -32,7 +44,8 @@ void init()
     printLoadingMessage();
 
     initSharedMemory();
-    initSemaphore();
+    initSemaphores();
+    initSignals();
 }
 
 void initSharedMemory()
@@ -47,10 +60,6 @@ void initSharedMemory()
 
     matrix = (char *)attachSharedMemory(matId);
 
-#if DEBUG
-    printf(SUCCESS_CHAR "Memoria di gioco agganciata (@ %p).\n", matrix);
-#endif
-
     pidId = getSharedMemory(PID_SIZE, PID_ID);
 
     if (pidId < 0)
@@ -64,22 +73,55 @@ void initSharedMemory()
     printf(SUCCESS_CHAR "Trovato TrisServer con PID = %d\n", *pid);
 }
 
-void initSemaphore()
+void initSemaphores()
 {
-    semId = getSemaphores(1);
+    semId = getSemaphores(2);
 
 #ifdef DEBUG
     printSuccess("Semaforo ottenuto.\n");
 #endif
 }
 
-void waitForServer()
+void initSignals(){
+    sigset_t set;
+    sigfillset(&set);
+    sigdelset(&set, SIGINT);
+    sigprocmask(SIG_SETMASK, &set, NULL);
+
+    if (signal(SIGINT, exitHandler) == SIG_ERR)
+    {
+        perror("signal");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void notifyPlayerReady()
 {
-    signalSemaphore(semId, 0, 1);
+    signalSemaphore(semId, WAIT_FOR_PLAYERS, 1);
+}
+
+void waitForOpponent()
+{
+    printf(KNRM "In attesa dell'avversario...\n");
+    waitSemaphore(semId, WAIT_FOR_OPPONENT, 1);
+    printf("Avversario pronto!\n");
 }
 
 void askForInput()
 {
-    int input;
-    scanf("%d", &input);
+    char input[50];
+
+    printf("Inserisci una mossa: ");
+    scanf("%s", input);
+}
+
+void exitHandler(int sig)
+{
+    if (firstCTRLCPressed)
+    {
+        kill(*pid, SIGUSR1);
+        exit(EXIT_SUCCESS);
+    }
+    firstCTRLCPressed = true;
+    printf("\nPremi CTRL+C di nuovo per uscire.\n");
 }

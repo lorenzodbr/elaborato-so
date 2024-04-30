@@ -5,7 +5,7 @@
 
 int getAndInitSharedMemory(int size, int id)
 {
-    int shmid = shmget(ftok(FTOK_PATH, id), size, IPC_CREAT | 0640);
+    int shmid = shmget(id, size, IPC_CREAT | 0640);
     if (shmid < 0)
     {
         errExit("shmget");
@@ -20,7 +20,7 @@ int getAndInitSharedMemory(int size, int id)
 
 int getSharedMemory(int size, int id)
 {
-    int shmid = shmget(ftok(FTOK_PATH, id), size, 0640);
+    int shmid = shmget(id, size, 0640);
 
     return shmid;
 }

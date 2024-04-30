@@ -25,7 +25,12 @@
 
 #define MATRIX_ID 163
 #define PID_ID 011
+#define SEM_ID 213
+
 #define FTOK_PATH ".config"
+
+#define WAIT_FOR_PLAYERS 0
+#define WAIT_FOR_OPPONENT 1
 
 #define MATRIX_SIZE MATRIX_SIDE_LEN * MATRIX_SIDE_LEN * sizeof(char) 
 #define PID_SIZE sizeof(pid_t)

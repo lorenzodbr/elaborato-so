@@ -17,7 +17,9 @@ void waitForPlayers();
 void disposeMatrix();
 void disposeSemaphores();
 void initSignals();
+void notifyOpponentReady();
 void exitHandler(int sig);
+void playerQuitHandler(int sig);
 
 int matId;
 char *matrix;
@@ -30,7 +32,7 @@ char playerOneSymbol;
 char playerTwoSymbol;
 
 bool firstCTRLCPressed = false;
-
+bool started = false;
 int playersCount = 0;
 
 int main(int argc, char *argv[])
@@ -45,8 +47,16 @@ int main(int argc, char *argv[])
     playerTwoSymbol = argv[3][0];
 
     init();
-
     waitForPlayers();
+    notifyOpponentReady();
+
+    started = true;
+
+    while (1)
+    {
+        printBoard(matrix);
+        sleep(100);
+    }
 
     return EXIT_SUCCESS;
 }
@@ -68,16 +78,8 @@ void init()
 void initSharedMemory()
 {
     matId = getAndInitSharedMemory(MATRIX_SIZE, MATRIX_ID);
-
     matrix = (char *)attachSharedMemory(matId);
-
-    for (int i = 0; i < MATRIX_SIZE; i++)
-    {
-        for (int j = 0; j < MATRIX_SIZE; j++)
-        {
-            matrix[i * MATRIX_SIZE + j] = ' ';
-        }
-    }
+    initBoard(matrix);
 
 #if DEBUG
     printf(SUCCESS_CHAR "Matrice inizializzata.\n");
@@ -99,8 +101,13 @@ void disposeMatrix()
 
 void initSemaphores()
 {
-    semId = getSemaphores(1);
-    setSemaphore(semId, 0, 0);
+    semId = getSemaphores(2);
+
+    short unsigned values[2];
+    values[WAIT_FOR_PLAYERS] = 0;
+    values[WAIT_FOR_OPPONENT] = 0;
+
+    setSemaphores(semId, 2, values);
 }
 
 void disposeSemaphores()
@@ -124,42 +131,68 @@ void setAtExitCleanup()
     }
 }
 
-void initSignals(){
+void initSignals()
+{
     sigset_t set;
     sigfillset(&set);
     sigdelset(&set, SIGINT);
+    sigdelset(&set, SIGUSR1);
     sigprocmask(SIG_SETMASK, &set, NULL);
 
-    if(signal(SIGINT, exitHandler) == SIG_ERR){
+    if (signal(SIGINT, exitHandler) == SIG_ERR)
+    {
+        perror("signal");
+        exit(EXIT_FAILURE);
+    }
+
+    if (signal(SIGUSR1, playerQuitHandler) == SIG_ERR)
+    {
         perror("signal");
         exit(EXIT_FAILURE);
     }
 }
 
-void exitHandler(int sig){
-    if(firstCTRLCPressed){
+void exitHandler(int sig)
+{
+    if (firstCTRLCPressed)
+    {
         exit(EXIT_SUCCESS);
     }
     firstCTRLCPressed = true;
     printf("\nPremi CTRL+C di nuovo per uscire.\n");
 }
 
+void playerQuitHandler(int sig)
+{
+    printf("\nUn giocatore ha abbandonato la partita...\n");
+    playersCount--;
+
+    if(started){
+        printf("Partita terminata.\n");
+        exit(EXIT_SUCCESS);
+    }
+}
+
 void waitForPlayers()
 {
     printf("\nAttendo i giocatori...\n");
-    do {
-        errno = 0;
-        waitSemaphore(semId, 0, 1);
-    } while(errno == EINTR);
+    while(playersCount < 2){
+        do
+        {
+            errno = 0;
+            waitSemaphore(semId, WAIT_FOR_PLAYERS, 1);
+        } while (errno == EINTR);
 
-    playersCount++;
+        if(++playersCount == 1)
+            printf("Un giocatore (%c) è entrato in partita.\n", playerOneSymbol);
+        else 
+            printf("Un altro giocatore (%c) è entrato in partita. Pronti per cominciare.\n", playerTwoSymbol);
+    }
 
-    printf("Un giocatore (%c) è entrato in partita.\n", playerOneSymbol);
+    signalSemaphore(semId, WAIT_FOR_OPPONENT, 2);
+}
 
-    do {
-        errno = 0;
-        waitSemaphore(semId, 0, 1);
-    } while(errno == EINTR);
-
-    printf("Un altro giocatore (%c) è entrato in partita.\nPronti per cominciare.\n\n", playerTwoSymbol);
+void notifyOpponentReady()
+{
+    signalSemaphore(semId, WAIT_FOR_OPPONENT, 2);
 }

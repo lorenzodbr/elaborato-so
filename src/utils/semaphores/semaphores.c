@@ -4,12 +4,23 @@
 #include "../data.c"
 #include <errno.h>
 
+#ifndef SEMUN_H
+#define SEMUN_H
+union semun
+{
+    int val;
+    struct semid_ds *buf;
+    unsigned short *array;
+};
+#endif
+
 int getSemaphores(int nsems);
 void setSemaphore(int semid, int semnum, int value);
+void setSemaphores(int semid, int nsems, short unsigned *values);
 
 int getSemaphores(int nsems)
 {
-    int semId = semget(ftok(FTOK_PATH, MATRIX_ID), nsems, IPC_CREAT | 0640);
+    int semId = semget(ftok(FTOK_PATH, SEM_ID), nsems, IPC_CREAT | 0640);
     if (semId < 0)
     {
         errExit("semget");
@@ -32,6 +43,17 @@ void setSemaphore(int semid, int semnum, int value)
 #if DEBUG
     printf(SUCCESS_CHAR "Semafori inizializzati.\n");
 #endif
+}
+
+void setSemaphores(int semid, int nsems, short unsigned *values)
+{
+    union semun arg;
+    arg.array = values;
+
+    if (semctl(semid, 0, SETALL, arg) < 0)
+    {
+        errExit("semctl");
+    }
 }
 
 void disposeSemaphore(int semid)

@@ -44,13 +44,34 @@ void printLoadingCompleteMessage()
     printf(KNRM "Caricamento completato.\n");
 }
 
-void printBoard(char *matId){
-    printf("\n");
-    for(int i = 0; i < MATRIX_SIZE; i++){
-        for(int j = 0; j < MATRIX_SIZE; j++){
-            printf("%c ", matId[i * MATRIX_SIZE + j]);
+void initBoard(char *matId)
+{
+    for (int i = 0; i < MATRIX_SIDE_LEN; i++)
+    {
+        for (int j = 0; j < MATRIX_SIDE_LEN; j++)
+        {
+            matId[i * MATRIX_SIDE_LEN + j] = ' ';
         }
-        printf("\n");
+    }
+}
+
+void printBoard(char *matId)
+{
+    printf("\n");
+    for (int i = 0; i < MATRIX_SIDE_LEN; i++)
+    {
+        for (int j = 0; j < MATRIX_SIDE_LEN; j++)
+        {
+            printf(" %c", matId[i * MATRIX_SIDE_LEN + j]);
+            if (j < MATRIX_SIDE_LEN - 1)
+            {
+                printf(" |");
+            }
+        }
+        if (i < MATRIX_SIDE_LEN - 1)
+        {
+            printf("\n-----------\n");
+        }
     }
     printf("\n");
 }
