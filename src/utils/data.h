@@ -29,11 +29,17 @@
 
 #define FTOK_PATH ".config"
 
+#define N_SEM 3
 #define WAIT_FOR_PLAYERS 0
 #define WAIT_FOR_OPPONENT 1
+#define LOCK 2
 
-#define MATRIX_SIZE MATRIX_SIDE_LEN * MATRIX_SIDE_LEN * sizeof(char) 
-#define PID_SIZE sizeof(pid_t)
+#define SERVER 0
+#define PLAYER_ONE 1
+#define PLAYER_TWO 2
+
+#define MATRIX_SIZE MATRIX_SIDE_LEN *MATRIX_SIDE_LEN * sizeof(char)
+#define PID_SIZE 3 * sizeof(pid_t)
 
 #define CLEAR_SCREEN "\033[H\033[J"
 #define LOADING_MESSAGE "\nCaricamento in corso...  \n"
@@ -46,7 +52,6 @@
                  \\ \\ \\ \\ \\/ \\ \\ \\/\\__, `\\ \n\
                   \\ \\_\\ \\_\\  \\ \\_\\/\\____/ "
 
-                   
 #define TRIS_ASCII_ART_BOTTOM "\n                   \\/_/\\/_/   \\/_/\\/___/  v" VERSION "\n                                   \n"
 #define TRIS_ASCII_ART_SERVER TRIS_ASCII_ART_TOP "Server" TRIS_ASCII_ART_BOTTOM
 #define TRIS_ASCII_ART_CLIENT TRIS_ASCII_ART_TOP "Client" TRIS_ASCII_ART_BOTTOM

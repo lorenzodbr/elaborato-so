@@ -3,9 +3,10 @@
 #include <signal.h>
 #include <errno.h>
 #include <stdbool.h>
-#include "utils/globals.c"
-#include "utils/semaphores/semaphores.c"
-#include "utils/shared_memory/shared_memory.c"
+
+#include "utils/data.h"
+#include "utils/globals.h"
+#include "utils/shared_memory/shared_memory.h"
 
 void init();
 void notifyPlayerReady();
@@ -15,6 +16,8 @@ void askForInput();
 void waitForOpponent();
 void initSignals();
 void exitHandler(int sig);
+void checkResults(int sig);
+void serverQuitHandler(int sig);
 
 int semId;
 int matId;
@@ -24,17 +27,20 @@ char *matrix;
 pid_t *pid;
 
 bool firstCTRLCPressed = false;
+int playerIndex = -1;
 
 int main()
 {
     init();
     notifyPlayerReady();
     waitForOpponent();
+
     do
     {
         printBoard(matrix);
         askForInput();
     } while (1);
+
     return 0;
 }
 
@@ -43,8 +49,8 @@ void init()
     printWelcomeMessageClient();
     printLoadingMessage();
 
-    initSharedMemory();
     initSemaphores();
+    initSharedMemory();
     initSignals();
 }
 
@@ -70,25 +76,38 @@ void initSharedMemory()
 
     pid = (int *)attachSharedMemory(pidId);
 
-    printf(SUCCESS_CHAR "Trovato TrisServer con PID = %d\n", *pid);
+    playerIndex = setPid(pid, getpid());
+
+    printf(KGRN SUCCESS_CHAR "Trovato TrisServer con PID = %d\n" KNRM, *pid);
 }
 
 void initSemaphores()
 {
-    semId = getSemaphores(2);
-
-#ifdef DEBUG
-    printSuccess("Semaforo ottenuto.\n");
-#endif
+    semId = getSemaphores(N_SEM);
 }
 
-void initSignals(){
+void initSignals()
+{
     sigset_t set;
     sigfillset(&set);
     sigdelset(&set, SIGINT);
+    sigdelset(&set, SIGUSR1);
+    sigdelset(&set, SIGUSR2);
     sigprocmask(SIG_SETMASK, &set, NULL);
 
     if (signal(SIGINT, exitHandler) == SIG_ERR)
+    {
+        perror("signal");
+        exit(EXIT_FAILURE);
+    }
+
+    if (signal(SIGUSR1, serverQuitHandler) == SIG_ERR)
+    {
+        perror("signal");
+        exit(EXIT_FAILURE);
+    }
+
+    if (signal(SIGUSR2, checkResults) == SIG_ERR)
     {
         perror("signal");
         exit(EXIT_FAILURE);
@@ -115,13 +134,24 @@ void askForInput()
     scanf("%s", input);
 }
 
+void checkResults(int sig){
+    printf("Ha vinto...\n");
+    exit(EXIT_SUCCESS);
+}
+
 void exitHandler(int sig)
 {
     if (firstCTRLCPressed)
     {
-        kill(*pid, SIGUSR1);
+        kill(pid[SERVER], playerIndex == 1 ? SIGUSR1 : SIGUSR2);
         exit(EXIT_SUCCESS);
     }
     firstCTRLCPressed = true;
     printf("\nPremi CTRL+C di nuovo per uscire.\n");
+}
+
+void serverQuitHandler(int sig)
+{
+    printf(KRED "\nIl server ha terminato la partita.\n");
+    exit(EXIT_FAILURE);
 }

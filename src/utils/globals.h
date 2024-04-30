@@ -1,16 +1,23 @@
-#include "data.c"
 #include <pthread.h>
 #include <unistd.h>
 #include <stdio.h>
+
+#include "semaphores/semaphores.h"
 
 void printWelcomeMessageServer();
 void printWelcomeMessageClient();
 void printLoadingMessage();
 void *loadingSpinner();
-void errExit(const char *msg);
 void printAndFlush(const char *msg);
 void startLoadingSpinner();
 void stopLoadingSpinner();
+void printSuccess(const char *msg);
+void initBoard(char *matId);
+void printBoard(char *matId);
+void initPids(int *pidsPointer);
+int setPid(int *pidsPointer, int pid);
+int getPid(int *pidsPointer, int index);
+void setPidAt(int *pidsPointer, int pid, int index);
 
 bool endSpinner = false;
 
@@ -53,6 +60,10 @@ void initBoard(char *matId)
             matId[i * MATRIX_SIDE_LEN + j] = ' ';
         }
     }
+
+#if DEBUG
+    printf(KGRN SUCCESS_CHAR "Matrice inizializzata.\n" KNRM);
+#endif
 }
 
 void printBoard(char *matId)
@@ -60,6 +71,8 @@ void printBoard(char *matId)
     printf("\n");
     for (int i = 0; i < MATRIX_SIDE_LEN; i++)
     {
+        printf("  ");
+
         for (int j = 0; j < MATRIX_SIDE_LEN; j++)
         {
             printf(" %c", matId[i * MATRIX_SIDE_LEN + j]);
@@ -70,7 +83,7 @@ void printBoard(char *matId)
         }
         if (i < MATRIX_SIDE_LEN - 1)
         {
-            printf("\n-----------\n");
+            printf("\n  -----------\n");
         }
     }
     printf("\n");
@@ -122,13 +135,44 @@ void printSuccess(const char *msg)
     printAndFlush(msg);
 }
 
-void errExit(const char *msg)
+void initPids(int *pidsPointer)
 {
-    printAndFlush(KRED ERROR_CHAR);
-#if DEBUG
-    perror(msg);
-#else
-    printf("%s\n", msg);
-#endif
-    exit(EXIT_FAILURE);
+    for (int i = 0; i < 3; i++)
+    {
+        pidsPointer[i] = 0;
+    }
+}
+
+// set specified pid to the first empty slot (out of 3)
+int setPid(int *pidsPointer, int pid)
+{
+    int semId = getSemaphores(N_SEM), playerIndex;
+
+    waitSemaphore(semId, LOCK, 1);
+    for (int i = 0; i < 3; i++)
+    {
+        if (pidsPointer[i] == 0)
+        {
+            pidsPointer[i] = pid;
+            playerIndex = i;
+            break;
+        }
+    }
+    signalSemaphore(semId, LOCK, 1);
+
+    return playerIndex;
+}
+
+void setPidAt(int *pidsPointer, int index, int pid)
+{
+    int semId = getSemaphores(N_SEM);
+
+    waitSemaphore(semId, LOCK, 1);
+    pidsPointer[index] = pid;
+    signalSemaphore(semId, LOCK, 1);
+}
+
+int getPid(int *pidsPointer, int index)
+{
+    return pidsPointer[index];
 }

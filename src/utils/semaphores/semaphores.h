@@ -1,8 +1,9 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
-#include "../data.c"
 #include <errno.h>
+
+#include "../errExit.h"
 
 #ifndef SEMUN_H
 #define SEMUN_H
@@ -17,17 +18,20 @@ union semun
 int getSemaphores(int nsems);
 void setSemaphore(int semid, int semnum, int value);
 void setSemaphores(int semid, int nsems, short unsigned *values);
+void disposeSemaphore(int semid);
+void waitSemaphore(int semid, int semnum, int value);
+void signalSemaphore(int semid, int semnum, int value);
 
 int getSemaphores(int nsems)
 {
-    int semId = semget(ftok(FTOK_PATH, SEM_ID), nsems, IPC_CREAT | 0640);
+    int semId = semget(SEM_ID, nsems, IPC_CREAT | 0640);
     if (semId < 0)
     {
         errExit("semget");
     }
 
 #if DEBUG
-    printf(SUCCESS_CHAR "Semafori ottenuti.\n");
+    printf(KGRN SUCCESS_CHAR "Semafori ottenuti.\n" KNRM);
 #endif
 
     return semId;
@@ -41,7 +45,7 @@ void setSemaphore(int semid, int semnum, int value)
     }
 
 #if DEBUG
-    printf(SUCCESS_CHAR "Semafori inizializzati.\n");
+    printf(KGRN SUCCESS_CHAR "Semafori inizializzati.\n" KNRM);
 #endif
 }
 
@@ -54,6 +58,10 @@ void setSemaphores(int semid, int nsems, short unsigned *values)
     {
         errExit("semctl");
     }
+
+#if DEBUG
+    printf(KGRN SUCCESS_CHAR "Semafori inizializzati.\n" KNRM);
+#endif
 }
 
 void disposeSemaphore(int semid)
@@ -62,6 +70,10 @@ void disposeSemaphore(int semid)
     {
         errExit("semctl");
     }
+
+#if DEBUG
+    printf(KGRN SUCCESS_CHAR "Semafori deallocati.\n" KNRM);
+#endif
 }
 
 void waitSemaphore(int semid, int semnum, int value)

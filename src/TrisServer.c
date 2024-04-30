@@ -3,21 +3,23 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <signal.h>
+#include <errno.h>
 
-#include "utils/data.c"
-#include "utils/globals.c"
-#include "utils/shared_memory/shared_memory.c"
-#include "utils/semaphores/semaphores.c"
+#include "utils/data.h"
+#include "utils/globals.h"
+#include "utils/shared_memory/shared_memory.h"
 
 void init();
 void initSharedMemory();
 void initSemaphores();
 void setAtExitCleanup();
 void waitForPlayers();
-void disposeMatrix();
+void disposeMemory();
 void disposeSemaphores();
 void initSignals();
 void notifyOpponentReady();
+void notifyPlayerWhoWon(int playerWhoWon);
+void notifyServerQuit();
 void exitHandler(int sig);
 void playerQuitHandler(int sig);
 
@@ -69,9 +71,10 @@ void init()
 
     // Data structures
     setAtExitCleanup();
-    initSharedMemory();
     initSemaphores();
+    initSharedMemory();
     initSignals();
+
     printLoadingCompleteMessage();
 }
 
@@ -81,42 +84,32 @@ void initSharedMemory()
     matrix = (char *)attachSharedMemory(matId);
     initBoard(matrix);
 
-#if DEBUG
-    printf(SUCCESS_CHAR "Matrice inizializzata.\n");
-#endif
-
     pidId = getAndInitSharedMemory(PID_SIZE, PID_ID);
     pid = (int *)attachSharedMemory(pidId);
-    *pid = getpid();
+    initPids(pid);
+    setPidAt(pid, 0, getpid());
 }
 
-void disposeMatrix()
+void disposeMemory()
 {
     disposeSharedMemory(matId);
-
-#if DEBUG
-    printf(KGRN SUCCESS_CHAR "Matrice deallocata.\n");
-#endif
+    disposeSharedMemory(pidId);
 }
 
 void initSemaphores()
 {
-    semId = getSemaphores(2);
+    semId = getSemaphores(N_SEM);
 
-    short unsigned values[2];
+    short unsigned values[N_SEM];
     values[WAIT_FOR_PLAYERS] = 0;
     values[WAIT_FOR_OPPONENT] = 0;
-
-    setSemaphores(semId, 2, values);
+    values[LOCK] = 1;
+    setSemaphores(semId, N_SEM, values);
 }
 
 void disposeSemaphores()
 {
     disposeSemaphore(semId);
-
-#if DEBUG
-    printf(SUCCESS_CHAR "Semafori deallocati.\n");
-#endif
 }
 
 void setAtExitCleanup()
@@ -125,7 +118,7 @@ void setAtExitCleanup()
     {
         errExit("atexit");
     }
-    if (atexit(disposeMatrix))
+    if (atexit(disposeMemory))
     {
         errExit("atexit");
     }
@@ -137,6 +130,7 @@ void initSignals()
     sigfillset(&set);
     sigdelset(&set, SIGINT);
     sigdelset(&set, SIGUSR1);
+    sigdelset(&set, SIGUSR2);
     sigprocmask(SIG_SETMASK, &set, NULL);
 
     if (signal(SIGINT, exitHandler) == SIG_ERR)
@@ -150,12 +144,20 @@ void initSignals()
         perror("signal");
         exit(EXIT_FAILURE);
     }
+
+    if (signal(SIGUSR2, playerQuitHandler) == SIG_ERR)
+    {
+        perror("signal");
+        exit(EXIT_FAILURE);
+    }
 }
 
 void exitHandler(int sig)
 {
     if (firstCTRLCPressed)
     {
+        printf("\nChiusura in corso...\n");
+        notifyServerQuit();
         exit(EXIT_SUCCESS);
     }
     firstCTRLCPressed = true;
@@ -164,11 +166,17 @@ void exitHandler(int sig)
 
 void playerQuitHandler(int sig)
 {
-    printf("\nUn giocatore ha abbandonato la partita...\n");
+    int playerWhoQuitted = sig == SIGUSR1 ? PLAYER_ONE : PLAYER_TWO;
+    int playerWhoStayed = playerWhoQuitted == PLAYER_ONE ? PLAYER_TWO : PLAYER_ONE;
+
+    printf("\nIl giocatore %d (con PID = %d) ha abbandonato la partita.\n", playerWhoQuitted, pid[playerWhoQuitted]);
+    setPidAt(pid, playerWhoQuitted, 0);
     playersCount--;
 
-    if(started){
-        printf("Partita terminata.\n");
+    if (started)
+    {
+        printf("Partita terminata: vince il giocatore %d (con PID = %d).\n", playerWhoStayed, pid[playerWhoStayed]);
+        notifyPlayerWhoWon(playerWhoStayed);
         exit(EXIT_SUCCESS);
     }
 }
@@ -176,23 +184,33 @@ void playerQuitHandler(int sig)
 void waitForPlayers()
 {
     printf("\nAttendo i giocatori...\n");
-    while(playersCount < 2){
+    while (playersCount < 2)
+    {
         do
         {
             errno = 0;
             waitSemaphore(semId, WAIT_FOR_PLAYERS, 1);
         } while (errno == EINTR);
 
-        if(++playersCount == 1)
-            printf("Un giocatore (%c) è entrato in partita.\n", playerOneSymbol);
-        else 
-            printf("Un altro giocatore (%c) è entrato in partita. Pronti per cominciare.\n", playerTwoSymbol);
+        if (++playersCount == 1)
+            printf("Un giocatore con PID = %d (%c) è entrato in partita.\n", pid[PLAYER_ONE], playerOneSymbol);
+        else
+            printf("Un altro giocatore con PID = %d (%c) è entrato in partita. Pronti per cominciare.\n", pid[PLAYER_TWO], playerTwoSymbol);
     }
-
-    signalSemaphore(semId, WAIT_FOR_OPPONENT, 2);
 }
 
 void notifyOpponentReady()
 {
     signalSemaphore(semId, WAIT_FOR_OPPONENT, 2);
+}
+
+void notifyPlayerWhoWon(int playerWhoWon)
+{
+    kill(pid[playerWhoWon], SIGUSR2);
+}
+
+void notifyServerQuit()
+{
+    kill(pid[PLAYER_ONE], SIGUSR1);
+    kill(pid[PLAYER_TWO], SIGUSR1);
 }

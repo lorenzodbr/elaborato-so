@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <sys/shm.h>
 #include <sys/ipc.h>
-#include "../data.c"
 
 int getAndInitSharedMemory(int size, int id)
 {
@@ -12,7 +11,7 @@ int getAndInitSharedMemory(int size, int id)
     }
 
 #if DEBUG
-    printf(SUCCESS_CHAR "Memoria condivisa ottenuta (ID: %d).\n", shmid);
+    printf(KGRN SUCCESS_CHAR "Memoria condivisa ottenuta (ID: %d).\n" KNRM, shmid);
 #endif
 
     return shmid;
@@ -31,6 +30,10 @@ void disposeSharedMemory(int shmid)
     {
         errExit("shmctl");
     }
+
+#if DEBUG
+    printf(KGRN SUCCESS_CHAR "Memoria condivisa deallocata.\n" KNRM);
+#endif
 }
 
 void *attachSharedMemory(int shmid)
@@ -42,7 +45,7 @@ void *attachSharedMemory(int shmid)
     }
 
 #if DEBUG
-    printf(SUCCESS_CHAR "Memoria condivisa agganciata (@ %p).\n", addr);
+    printf(KGRN SUCCESS_CHAR "Memoria condivisa agganciata (@ %p).\n" KNRM, addr);
 #endif
 
     return addr;
