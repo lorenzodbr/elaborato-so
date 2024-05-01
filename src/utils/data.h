@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include <stdbool.h>
 
-#define DEBUG 1
+#define DEBUG 0
 
 // Args
 #define N_ARGS_SERVER 3
@@ -26,7 +26,8 @@
 #define BNRM "\x1B[0m"
 #define BGRY "\033[100m"
 
-#define PLAYER_ONE_COLOR FCYN
+// Players colors
+#define PLAYER_ONE_COLOR FBLU
 #define PLAYER_TWO_COLOR FRED
 
 // Chars
@@ -78,7 +79,6 @@
 // Strings
 #define CLEAR_SCREEN "\033[H\033[J"
 #define LOADING_MESSAGE "Caricamento in corso...  \n"
-#define INIT_ERROR "Errore durante l'inizializzazione."
 #define VERSION "1.0"
 #define TRIS_ASCII_ART_TOP "              ______                     \n\
              /\\__  _\\       __           \n\
@@ -91,5 +91,35 @@
 #define TRIS_ASCII_ART_SERVER TRIS_ASCII_ART_TOP "Server" TRIS_ASCII_ART_BOTTOM
 #define TRIS_ASCII_ART_CLIENT TRIS_ASCII_ART_TOP "Client" TRIS_ASCII_ART_BOTTOM
 #define CREDITS "Progetto realizzato da Lorenzo Di Berardino e Filippo Milani\n"
-#define USAGE_ERROR_SERVER "Usage: ./TrisServer <timeout> <playerOneSymbol> <playerTwoSymbol>"
-#define USAGE_ERROR_CLIENT "Usage: ./TrisClient <username>"
+
+// Messages
+#define WAITING_FOR_PLAYERS_MESSAGE "\nIn attesa di giocatori... "
+#define SERVER_QUIT_MESSAGE FRED "\n\nIl server ha terminato la partita.\n"
+#define CTRLC_AGAIN_TO_QUIT_MESSAGE FYEL "\n\nPremi CTRL+C di nuovo per uscire.\n"
+#define WINS_PLAYER_MESSAGE FGRN "Vince il giocatore %d (con PID = %d).\n"
+#define WAITING_FOR_MOVE_SERVER_MESSAGE "In attesa della mossa del %sgiocatore %d%s (con PID = %d)...\n"
+#define MOVE_RECEIVED_SERVER_MESSAGE "Mossa ricevuta dal giocatore %d (con PID = %d).\n\n"
+#define A_PLAYER_JOINED_SERVER_MESSAGE "\nUn giocatore con PID = %d (%c) è entrato in partita.\n"
+#define ANOTHER_PLAYER_JOINED_SERVER_MESSAGE "Un altro giocatore con PID = %d (%c) è entrato in partita.\n\nPronti per cominciare. "
+#define A_PLAYER_QUIT_SERVER_MESSAGE "\nIl giocatore %d (con PID = %d) ha abbandonato la partita."
+#define STARTS_PLAYER_MESSAGE "Inizia il giocatore %d (con PID = %d).\n\n"
+#define DRAW_MESSAGE FYEL "Pareggio.\n"
+#define CLOSING_MESSAGE "\nChiusura in corso...\n"
+#define YOU_WON_FOR_QUIT_MESSAGE FGRN "\n\nHai vinto per abbandono dell'altro giocatore!\n"
+#define YOU_LOST_MESSAGE FRED "\nHai perso!\n"
+#define YOU_WON_MESSAGE FGRN "\nHai vinto!\n"
+#define INPUT_A_MOVE_MESSAGE "Inserisci la mossa (LetteraNumero): "
+#define WAITING_FOR_OPPONENT_MESSAGE FNRM "In attesa dell'avversario... "
+#define OPPONENT_READY_MESSAGE "Avversario pronto!"
+#define OPPONENT_TURN_MESSAGE "(Turno dell'avversario) "
+#define YOUR_SYMBOL_IS_MESSAGE "Il tuo simbolo è %s%c%s\n"
+#define LOADING_COMPLETE_MESSAGE FNRM "Caricamento completato.\n"
+
+// Errors
+#define USAGE_ERROR_SERVER "Uso: ./TrisServer <timeout> <playerOneSymbol> <playerTwoSymbol>"
+#define USAGE_ERROR_CLIENT "Uso: ./TrisClient <username>"
+#define TOO_MANY_PLAYERS_ERROR "\nTroppi giocatori connessi. Riprova più tardi.\n"
+#define INITIALIZATION_ERROR "Errore durante l'inizializzazione."
+#define SYMBOLS_LENGTH_ERROR "I simboli dei giocatori devono essere di un solo carattere."
+#define INVALID_MOVE_ERROR "Mossa non valida. Riprova: "
+#define NO_SERVER_FOUND_ERROR "Nessun server trovato. Esegui TrisServer prima di eseguire TrisClient.\n"

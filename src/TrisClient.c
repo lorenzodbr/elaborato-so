@@ -60,21 +60,24 @@ int main(int argc, char *argv[])
 
     if (playerIndex != INITIAL_TURN)
     {
-        clearScreen();
+        clearScreenClient();
+        printSymbol(symbols[playerIndex - 1], playerIndex);
         printBoard(matrix, symbols[0], symbols[1]);
-        printAndFlush("\n(Turno dell'avversario) ");
+        printAndFlush(OPPONENT_TURN_MESSAGE);
     }
 
     do
     {
         waitForMove();
-        clearScreen();
+        clearScreenClient();
+        printSymbol(symbols[playerIndex - 1], playerIndex);
         printBoard(matrix, symbols[0], symbols[1]);
         askForInput();
         notifyMove();
-        clearScreen();
+        clearScreenClient();
+        printSymbol(symbols[playerIndex - 1], playerIndex);
         printBoard(matrix, symbols[0], symbols[1]);
-        printAndFlush("\n(Turno dell'avversario) ");
+        printAndFlush(OPPONENT_TURN_MESSAGE);
     } while (1);
 
     return EXIT_SUCCESS;
@@ -96,34 +99,27 @@ void initSharedMemory()
 
     if (matId < 0)
     {
-        printf(FRED "Nessun server trovato. Esegui TrisServer prima di eseguire TrisClient.\n");
+        printError(NO_SERVER_FOUND_ERROR);
         exit(EXIT_FAILURE);
     }
 
     matrix = (int *)attachSharedMemory(matId);
 
     pidId = getSharedMemory(PID_SIZE, PID_ID);
-
-    if (pidId < 0)
-    {
-        printf(FRED "Nessun server trovato. Esegui TrisServer prima di eseguire TrisClient.\n");
-        exit(EXIT_FAILURE);
-    }
-
     pids = (pid_t *)attachSharedMemory(pidId);
 
     playerIndex = setPid(pids, getpid());
 
     if (playerIndex == -1)
     {
-        printf(FRED "\nTroppi giocatori connessi. Riprova più tardi.\n");
+        printError(TOO_MANY_PLAYERS_ERROR);
         exit(EXIT_FAILURE);
     }
 
     symId = getSharedMemory(SYMBOLS_SIZE, SYMBOLS_ID);
     symbols = (char *)attachSharedMemory(symId);
 
-    printf(FNRM "\nTu sei il %sgiocatore %d%s. Hai il simbolo %s%c\n" FNRM, FYEL, playerIndex, FNRM, playerIndex == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR, symbols[playerIndex - 1]);
+    // printf(FNRM "\nTu sei il %sgiocatore %d%s. Hai il simbolo %s%c\n" FNRM, FYEL, playerIndex, FNRM, playerIndex == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR, symbols[playerIndex - 1]);
 
     resId = getSharedMemory(RESULT_SIZE, RESULT_ID);
     result = (int *)attachSharedMemory(resId);
@@ -149,33 +145,13 @@ void initSignals()
     sigdelset(&set, SIGTERM);
     sigprocmask(SIG_SETMASK, &set, NULL);
 
-    if (signal(SIGINT, exitHandler) == SIG_ERR)
+    if (signal(SIGINT, exitHandler) == SIG_ERR ||
+        signal(SIGUSR1, serverQuitHandler) == SIG_ERR ||
+        signal(SIGUSR2, checkResults) == SIG_ERR ||
+        signal(SIGHUP, quitHandler) == SIG_ERR ||
+        signal(SIGTERM, exitHandler) == SIG_ERR)
     {
-        perror("signal");
-        exit(EXIT_FAILURE);
-    }
-
-    if (signal(SIGTERM, exitHandler) == SIG_ERR)
-    {
-        perror("signal");
-        exit(EXIT_FAILURE);
-    }
-
-    if (signal(SIGHUP, quitHandler) == SIG_ERR)
-    {
-        perror("signal");
-        exit(EXIT_FAILURE);
-    }
-
-    if (signal(SIGUSR1, serverQuitHandler) == SIG_ERR)
-    {
-        perror("signal");
-        exit(EXIT_FAILURE);
-    }
-
-    if (signal(SIGUSR2, checkResults) == SIG_ERR)
-    {
-        perror("signal");
+        printError(INITIALIZATION_ERROR);
         exit(EXIT_FAILURE);
     }
 }
@@ -193,9 +169,9 @@ void notifyMove()
 
 void waitForOpponent()
 {
-    printf(FNRM "In attesa dell'avversario...\n");
+    printf(WAITING_FOR_OPPONENT_MESSAGE);
     waitSemaphore(semId, WAIT_FOR_OPPONENT_READY, 1);
-    printf("Avversario pronto!");
+    printf(OPPONENT_READY_MESSAGE);
 }
 
 void waitForMove()
@@ -213,7 +189,7 @@ void askForInput()
 {
     char input[50];
 
-    printf("Inserisci una mossa (LetteraNumero): ");
+    printf(INPUT_A_MOVE_MESSAGE);
     scanf("%s", input);
 
     move_t move;
@@ -222,7 +198,7 @@ void askForInput()
     {
         firstCTRLCPressed = false; // reset firstCTRLCPressed if something else is inserted
 
-        printf(FRED "Mossa non valida. Riprova: " FNRM);
+        printError(INVALID_MOVE_ERROR);
         scanf("%s", input);
     }
 
@@ -231,24 +207,21 @@ void askForInput()
 
 void checkResults(int sig)
 {
-    if (*result < 3)
+    if (*result == DRAW)
     {
-        if (*result != playerIndex)
-        {
-            printf(FRED "\nHai perso!\n");
-        }
-        else
-        {
-            printf(FGRN "\nHai vinto!\n");
-        }
-    }
-    else if (*result == DRAW)
-    {
-        printf(FYEL "\nPareggio!\n");
+        printf(DRAW_MESSAGE);
     }
     else if (*result == QUIT)
     {
-        printf(FGRN "\n\nHai vinto per abbandono dell'altro giocatore!\n");
+        printf(YOU_WON_FOR_QUIT_MESSAGE);
+    }
+    else if (*result != playerIndex)
+    {
+        printf(YOU_LOST_MESSAGE);
+    }
+    else
+    {
+        printf(YOU_WON_MESSAGE);
     }
 
     exit(EXIT_SUCCESS);
@@ -259,11 +232,11 @@ void exitHandler(int sig)
     if (firstCTRLCPressed)
     {
         kill(pids[SERVER], playerIndex == 1 ? SIGUSR1 : SIGUSR2);
-        printf("\nChiusura in corso...\n");
+        printf(CLOSING_MESSAGE);
         exit(EXIT_SUCCESS);
     }
     firstCTRLCPressed = true;
-    printf("\nPremi CTRL+C di nuovo per uscire.\n");
+    printf(CTRLC_AGAIN_TO_QUIT_MESSAGE);
 }
 
 void quitHandler(int sig)
@@ -273,6 +246,6 @@ void quitHandler(int sig)
 
 void serverQuitHandler(int sig)
 {
-    printf(FRED "\nIl server ha terminato la partita.\n");
+    printf(SERVER_QUIT_MESSAGE);
     exit(EXIT_FAILURE);
 }

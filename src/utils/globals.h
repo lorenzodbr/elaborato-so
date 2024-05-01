@@ -11,23 +11,28 @@ typedef struct
     int col;
 } move_t;
 
-void printWelcomeMessageServer()
+void printHeaderServer()
 {
     printf(CLEAR_SCREEN);
-    printf(BOLD FCYN TRIS_ASCII_ART_SERVER);
-    printf(CREDITS);
-    printf(NO_BOLD FNRM);
+    printf(BOLD FCYN TRIS_ASCII_ART_SERVER NO_BOLD FNRM);
 }
 
-void printHeader()
+void printHeaderClient()
 {
     printf(CLEAR_SCREEN);
     printf(BOLD FCYN TRIS_ASCII_ART_CLIENT NO_BOLD FNRM);
 }
 
+void printWelcomeMessageServer()
+{
+    printHeaderServer();
+    printf(CREDITS);
+    printf(NO_BOLD FNRM);
+}
+
 void printWelcomeMessageClient(char *username)
 {
-    printHeader();
+    printHeaderClient();
     printf(CREDITS);
     printf(NO_BOLD FNRM "\nBenvenuto, %s%s! %s", FYEL, username, FNRM);
 }
@@ -41,9 +46,45 @@ void printLoadingMessage()
 #endif
 }
 
+void printAndFlush(const char *msg)
+{
+    printf("%s", msg);
+    fflush(stdout);
+}
+
+void *loadingSpinner()
+{
+    while (1)
+    {
+        printAndFlush("\b|");
+        usleep(100000);
+        printAndFlush("\b/");
+        usleep(100000);
+        printAndFlush("\b-");
+        usleep(100000);
+        printAndFlush("\b\\");
+        usleep(100000);
+    }
+
+    return NULL;
+}
+
+pthread_t startLoadingSpinner()
+{
+    pthread_t tid;
+    pthread_create(&tid, NULL, loadingSpinner, NULL);
+    return tid;
+}
+
+void stopLoadingSpinner(pthread_t tid)
+{
+    pthread_cancel(tid);
+    printAndFlush("\b \b");
+}
+
 void printLoadingCompleteMessage()
 {
-    printf(FNRM "Caricamento completato.\n");
+    printf(LOADING_COMPLETE_MESSAGE);
 }
 
 void initBoard(int *matrix)
@@ -101,15 +142,26 @@ void printBoard(int *matrix, char playerOneSymbol, char playerTwoSymbol)
     printf("\n\n");
 }
 
-void printAndFlush(const char *msg)
+void printSymbol(char symbol, int playerIndex)
 {
-    printf("%s", msg);
-    fflush(stdout);
+    printf(YOUR_SYMBOL_IS_MESSAGE, playerIndex == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR, symbol, FNRM);
 }
 
-void clearScreen()
+void printError(const char *msg, ...)
 {
-    printHeader();
+    printAndFlush(FRED ERROR_CHAR);
+    printAndFlush(msg);
+    printAndFlush(FNRM);
+}
+
+void clearScreenServer()
+{
+    printHeaderServer();
+}
+
+void clearScreenClient()
+{
+    printHeaderClient();
 }
 
 void printSuccess(const char *msg)
