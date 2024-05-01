@@ -14,22 +14,27 @@ typedef struct
 void printWelcomeMessageServer()
 {
     printf(CLEAR_SCREEN);
-    printf(BOLD KCYN TRIS_ASCII_ART_SERVER);
+    printf(BOLD FCYN TRIS_ASCII_ART_SERVER);
     printf(CREDITS);
-    printf(NO_BOLD KNRM);
+    printf(NO_BOLD FNRM);
+}
+
+void printHeader()
+{
+    printf(CLEAR_SCREEN);
+    printf(BOLD FCYN TRIS_ASCII_ART_CLIENT NO_BOLD FNRM);
 }
 
 void printWelcomeMessageClient(char *username)
 {
-    printf(CLEAR_SCREEN);
-    printf(BOLD KCYN TRIS_ASCII_ART_CLIENT);
+    printHeader();
     printf(CREDITS);
-    printf(NO_BOLD KNRM "\nBenvenuto, %s! ", username);
+    printf(NO_BOLD FNRM "\nBenvenuto, %s%s! %s", FYEL, username, FNRM);
 }
 
 void printLoadingMessage()
 {
-    printf(LOADING_MESSAGE KGRN);
+    printf(LOADING_MESSAGE FGRN);
 
 #if DEBUG
     printf(SUCCESS_CHAR "PID = %d\n", getpid());
@@ -38,7 +43,7 @@ void printLoadingMessage()
 
 void printLoadingCompleteMessage()
 {
-    printf(KNRM "Caricamento completato.\n");
+    printf(FNRM "Caricamento completato.\n");
 }
 
 void initBoard(int *matrix)
@@ -52,22 +57,37 @@ void initBoard(int *matrix)
     }
 
 #if DEBUG
-    printf(KGRN SUCCESS_CHAR "Matrice inizializzata.\n" KNRM);
+    printf(FGRN SUCCESS_CHAR "Matrice inizializzata.\n" FNRM);
 #endif
 }
 
 void printBoard(int *matrix, char playerOneSymbol, char playerTwoSymbol)
 {
     char chars[3] = {' ', playerOneSymbol, playerTwoSymbol};
+    int cell;
 
-    printf("\n\n     A   B   C\n\n");
+    printf("\n     A   B   C\n\n");
     for (int i = 0; i < MATRIX_SIDE_LEN; i++)
     {
         printf(" %d  ", i + 1);
 
         for (int j = 0; j < MATRIX_SIDE_LEN; j++)
         {
-            printf(" %c", chars[matrix[i * MATRIX_SIDE_LEN + j]]);
+            cell = matrix[i * MATRIX_SIDE_LEN + j];
+
+            switch (cell)
+            {
+            case 0:
+                printf("  ");
+                break;
+            case 1:
+                printf(PLAYER_ONE_COLOR " %c" FNRM, chars[cell]);
+                break;
+            case 2:
+                printf(PLAYER_TWO_COLOR " %c" FNRM, chars[cell]);
+                break;
+            }
+
             if (j < MATRIX_SIDE_LEN - 1)
             {
                 printf(" |");
@@ -87,9 +107,14 @@ void printAndFlush(const char *msg)
     fflush(stdout);
 }
 
+void clearScreen()
+{
+    printHeader();
+}
+
 void printSuccess(const char *msg)
 {
-    printAndFlush(KGRN SUCCESS_CHAR);
+    printAndFlush(FGRN SUCCESS_CHAR);
     printAndFlush(msg);
 }
 

@@ -11,7 +11,7 @@ int getAndInitSharedMemory(int size, int id)
     }
 
 #if DEBUG
-    printf(KGRN SUCCESS_CHAR "Memoria condivisa ottenuta (ID: %d).\n" KNRM, shmid);
+    printf(FGRN SUCCESS_CHAR "Memoria condivisa ottenuta (ID: %d).\n" FNRM, shmid);
 #endif
 
     return shmid;
@@ -32,7 +32,7 @@ void disposeSharedMemory(int shmid)
     }
 
 #if DEBUG
-    printf(KGRN SUCCESS_CHAR "Memoria condivisa deallocata.\n" KNRM);
+    printf(FGRN SUCCESS_CHAR "Memoria condivisa deallocata.\n" FNRM);
 #endif
 }
 
@@ -45,7 +45,7 @@ void *attachSharedMemory(int shmid)
     }
 
 #if DEBUG
-    printf(KGRN SUCCESS_CHAR "Memoria condivisa agganciata (@ %p).\n" KNRM, addr);
+    printf(FGRN SUCCESS_CHAR "Memoria condivisa agganciata (@ %p).\n" FNRM, addr);
 #endif
 
     return addr;

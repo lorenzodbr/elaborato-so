@@ -31,7 +31,7 @@ int getSemaphores(int nsems)
     }
 
 #if DEBUG
-    printf(KGRN SUCCESS_CHAR "Semafori ottenuti.\n" KNRM);
+    printf(FGRN SUCCESS_CHAR "Semafori ottenuti.\n" FNRM);
 #endif
 
     return semId;
@@ -45,7 +45,7 @@ void setSemaphore(int semid, int semnum, int value)
     }
 
 #if DEBUG
-    printf(KGRN SUCCESS_CHAR "Semafori inizializzati.\n" KNRM);
+    printf(FGRN SUCCESS_CHAR "Semafori inizializzati.\n" FNRM);
 #endif
 }
 
@@ -60,7 +60,7 @@ void setSemaphores(int semid, int nsems, short unsigned *values)
     }
 
 #if DEBUG
-    printf(KGRN SUCCESS_CHAR "Semafori inizializzati.\n" KNRM);
+    printf(FGRN SUCCESS_CHAR "Semafori inizializzati.\n" FNRM);
 #endif
 }
 
@@ -72,7 +72,7 @@ void disposeSemaphore(int semid)
     }
 
 #if DEBUG
-    printf(KGRN SUCCESS_CHAR "Semafori deallocati.\n" KNRM);
+    printf(FGRN SUCCESS_CHAR "Semafori deallocati.\n" FNRM);
 #endif
 }
 

@@ -2,7 +2,7 @@
 
 void errExit(const char *msg)
 {
-    printf(KRED ERROR_CHAR "Errore: %s", msg);
+    printf(FRED ERROR_CHAR "%s", msg);
 
 #if DEBUG
     printf(" (errno = %d)\n", errno);

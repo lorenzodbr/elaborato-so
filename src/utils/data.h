@@ -3,23 +3,31 @@
 #include <unistd.h>
 #include <stdbool.h>
 
-#define DEBUG 0
+#define DEBUG 1
 
 // Args
 #define N_ARGS_SERVER 3
-#define N_ARGS_CLIENT 1
+#define N_ARGS_CLIENT 2
 
 // Colors
-#define KNRM "\x1B[0m"
-#define KRED "\x1B[31m"
-#define KGRN "\x1B[32m"
-#define KYEL "\x1B[33m"
-#define KBLU "\x1B[34m"
-#define KMAG "\x1B[35m"
-#define KCYN "\x1B[36m"
-#define KWHT "\x1B[37m"
+// Foreground
+#define FNRM "\x1B[0m"
+#define FRED "\x1B[31m"
+#define FGRN "\x1B[32m"
+#define FYEL "\x1B[33m"
+#define FBLU "\x1B[34m"
+#define FMAG "\x1B[35m"
+#define FCYN "\x1B[36m"
+#define FWHT "\x1B[37m"
 #define BOLD "\033[1m"
 #define NO_BOLD "\033[22m"
+
+// Background
+#define BNRM "\x1B[0m"
+#define BGRY "\033[100m"
+
+#define PLAYER_ONE_COLOR FCYN
+#define PLAYER_TWO_COLOR FRED
 
 // Chars
 #define NEWLINE "\n"
@@ -28,7 +36,7 @@
 
 // Keys for IPCs
 #define MATRIX_ID 163
-#define PID_ID 011
+#define PID_ID 110
 #define SEM_ID 213
 #define RESULT_ID 313
 #define SYMBOLS_ID 413
@@ -83,5 +91,5 @@
 #define TRIS_ASCII_ART_SERVER TRIS_ASCII_ART_TOP "Server" TRIS_ASCII_ART_BOTTOM
 #define TRIS_ASCII_ART_CLIENT TRIS_ASCII_ART_TOP "Client" TRIS_ASCII_ART_BOTTOM
 #define CREDITS "Progetto realizzato da Lorenzo Di Berardino e Filippo Milani\n"
-#define USAGE_ERROR_SERVER "Usage: ./TrisServer <timeout> <playerOneSymbol> <playerTwoSymbol>\n"
-#define USAGE_ERROR_CLIENT "Usage: ./TrisClient <username>\n"
+#define USAGE_ERROR_SERVER "Usage: ./TrisServer <timeout> <playerOneSymbol> <playerTwoSymbol>"
+#define USAGE_ERROR_CLIENT "Usage: ./TrisClient <username>"
