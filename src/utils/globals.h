@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
+#include <termios.h>
 
 #include "semaphores/semaphores.h"
 
@@ -80,6 +81,29 @@ void stopLoadingSpinner(pthread_t tid)
 {
     pthread_cancel(tid);
     printAndFlush("\b \b");
+}
+
+int setInput(struct termios *policy)
+{
+    return tcsetattr(STDOUT_FILENO, TCSANOW, policy);
+}
+
+void ignorePreviousInput()
+{
+    tcflush(STDIN_FILENO, TCIFLUSH);
+}
+
+bool initOutputSettings(struct termios *withEcho, struct termios *withoutEcho)
+{
+    if (tcgetattr(STDOUT_FILENO, withEcho) != 0)
+    {
+        return false;
+    }
+
+    memcpy(withoutEcho, withEcho, sizeof(struct termios));
+    withoutEcho->c_lflag &= ~ECHO;
+
+    return true;
 }
 
 void printLoadingCompleteMessage()

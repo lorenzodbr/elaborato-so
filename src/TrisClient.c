@@ -25,6 +25,10 @@ void serverQuitHandler(int sig);
 void waitForMove();
 void waitForResponse();
 void printMoveScreen();
+void setAtExitCleanup();
+void initTimeout();
+void resetTimeout();
+void timeoutHandler(int sig);
 
 // Shared memory
 int *matrix;
@@ -49,6 +53,10 @@ int semId;
 bool firstCTRLCPressed = false;
 int playerIndex = -1;
 char *username;
+
+// Terminal settings
+struct termios withEcho, withoutEcho;
+bool outputCustomizable = true;
 
 int main(int argc, char *argv[])
 {
@@ -82,6 +90,8 @@ int main(int argc, char *argv[])
         // Prints after the move
         printMoveScreen();
         printAndFlush(OPPONENT_TURN_MESSAGE);
+
+        setInput(&withoutEcho);
     } while (1);
 
     return EXIT_SUCCESS;
@@ -95,6 +105,11 @@ void init()
     initSemaphores();
     initSharedMemory();
     initSignals();
+    if ((outputCustomizable = initOutputSettings(&withEcho, &withoutEcho)))
+    {
+        setInput(&withoutEcho);
+    }
+    setAtExitCleanup();
 
     printLoadingCompleteMessage();
 }
@@ -164,6 +179,19 @@ void initSignals()
     }
 }
 
+void showInput()
+{
+    setInput(&withEcho);
+}
+
+void setAtExitCleanup()
+{
+    if (atexit(showInput))
+    {
+        errExit(INITIALIZATION_ERROR);
+    }
+}
+
 void notifyPlayerReady()
 {
     signalSemaphore(semId, WAIT_FOR_PLAYERS, 1);
@@ -195,7 +223,7 @@ void waitForMove()
         waitSemaphore(semId, PLAYER_ONE_TURN + playerIndex - 1, 1);
     } while (errno == EINTR);
 
-    tcflush(STDIN_FILENO, TCIFLUSH);
+    ignorePreviousInput();
 }
 
 void waitForResponse()
@@ -239,6 +267,7 @@ void askForInput()
 {
     char input[INPUT_LEN];
 
+    showInput(withoutEcho);
     initTimeout();
 
     printf(INPUT_A_MOVE_MESSAGE);

@@ -113,19 +113,23 @@
 
 // ----------------- MESSAGES ----------------
 
-#define GAME_SETTINGS_MESSAGE INFO_CHAR "Impostazioni:\n     ─ Timeout: %d secondi\n     ─ Simbolo " PLAYER_ONE_COLOR "giocatore 1" FNRM ": %c\n     ─ Simbolo " PLAYER_TWO_COLOR "giocatore 2" FNRM ": %c\n"
+#define GAME_SETTINGS_MESSAGE INFO_CHAR "Impostazioni:\n"
+#define TIMEOUT_SETTINGS_MESSAGE "     ─ Timeout: %d secondi\n"
+#define INFINITE_TIMEOUT_SETTINGS_MESSAGE "     ─ Timeout: ∞\n"
+#define PLAYER_ONE_SYMBOL_SETTINGS_MESSAGE "     ─ Simbolo " PLAYER_ONE_COLOR "giocatore 1" FNRM ": %c\n"
+#define PLAYER_TWO_SYMBOL_SETTINGS_MESSAGE "     ─ Simbolo " PLAYER_TWO_COLOR "giocatore 2" FNRM ": %c\n"
 #define LOADING_MESSAGE INFO_CHAR "Caricamento in corso...  \n"
 #define WELCOME_CLIENT_MESSAGE FNRM NO_BOLD "\nBenvenuto, " FYEL "%s!" FNRM "\n\n"
 #define WAITING_FOR_PLAYERS_MESSAGE "\n" WARNING_CHAR "In attesa di giocatori... "
 #define SERVER_QUIT_MESSAGE FRED "\n\nIl server ha terminato la partita.\n"
 #define MY_PID_MESSAGE SUCCESS_CHAR "PID = %d\n"
 #define CTRLC_AGAIN_TO_QUIT_MESSAGE FYEL "\n\nPremi CTRL+C di nuovo per uscire." FNRM "\n"
-#define WINS_PLAYER_MESSAGE FGRN "Vince il giocatore %d (con PID = %d).\n"
+#define WINS_PLAYER_MESSAGE FGRN SUCCESS_CHAR "Vince il giocatore %d (con PID = %d).\n"
 #define WAITING_FOR_MOVE_SERVER_MESSAGE "In attesa della mossa del %sgiocatore %d%s (con PID = %d)...\n"
 #define MOVE_RECEIVED_SERVER_MESSAGE "Mossa ricevuta dal %sgiocatore %d%s (con PID = %d).\n\n"
 #define A_PLAYER_JOINED_SERVER_MESSAGE "\nUn giocatore con PID = %d (%c) è entrato in partita. "
-#define ANOTHER_PLAYER_JOINED_SERVER_MESSAGE "Un altro giocatore con PID = %d (%c) è entrato in partita. \n\nPronti per cominciare. "
-#define A_PLAYER_QUIT_SERVER_MESSAGE "\nIl giocatore %d (con PID = %d) ha abbandonato la partita.\n"
+#define ANOTHER_PLAYER_JOINED_SERVER_MESSAGE "Un altro giocatore con PID = %d (%c) è entrato in partita. \n\n" INFO_CHAR " Pronti per cominciare. "
+#define A_PLAYER_QUIT_SERVER_MESSAGE "\nIl giocatore %d (con PID = %d) ha abbandonato la partita.\n\n"
 #define STARTS_PLAYER_MESSAGE "Inizia il giocatore %d (con PID = %d).\n\n"
 #define DRAW_MESSAGE FYEL "Pareggio.\n"
 #define CLOSING_MESSAGE FYEL "\nChiusura in corso...\n"
@@ -133,13 +137,13 @@
 #define YOU_LOST_MESSAGE FRED "Hai perso!\n"
 #define YOU_WON_MESSAGE FGRN "Hai vinto!\n"
 #define INPUT_A_MOVE_MESSAGE "Inserisci la mossa (LetteraNumero): "
-#define WAITING_FOR_OPPONENT_MESSAGE FNRM "In attesa dell'avversario... "
+#define WAITING_FOR_OPPONENT_MESSAGE FNRM WARNING_CHAR "In attesa dell'avversario... "
 #define OPPONENT_READY_MESSAGE "Avversario pronto!"
 #define OPPONENT_TURN_MESSAGE "(Turno dell'avversario) "
-#define YOUR_SYMBOL_IS_MESSAGE FYEL "%s" FNRM ", il tuo simbolo è " BOLD "%s%c%s\n" NO_BOLD
+#define YOUR_SYMBOL_IS_MESSAGE INFO_CHAR FYEL "%s" FNRM ", il tuo simbolo è " BOLD "%s%c%s\n" NO_BOLD
 #define LOADING_COMPLETE_MESSAGE FNRM SUCCESS_CHAR "Caricamento completato.\n\n"
-#define TIMEOUT_MESSAGE "Timeout: %d secondi.\n"
-#define INFINITE_TIMEOUT_MESSAGE "Timeout: ∞\n"
+#define TIMEOUT_MESSAGE INFO_CHAR "Timeout: %d secondi.\n"
+#define INFINITE_TIMEOUT_MESSAGE INFO_CHAR "Timeout: ∞\n"
 #define TIMEOUT_LOSS_MESSAGE FRED "\n\nIl tempo è scaduto. Hai perso per inattività.\n"
 #define MATRIX_INITIALIZED_MESSAGE FGRN SUCCESS_CHAR "Matrice inizializzata.\n" FNRM
 

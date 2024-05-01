@@ -27,6 +27,7 @@ void playerQuitHandler(int sig);
 void waitForMove();
 void notifyNextMove();
 void printGameSettings();
+void serverQuit();
 
 // Shared memory
 int *matrix;
@@ -57,6 +58,10 @@ bool started = false;
 int turn = INITIAL_TURN;
 int playersCount = 0;
 int parsedTimeout;
+
+// Terminal settings
+struct termios withEcho, withoutEcho;
+bool outputCustomizable = true;
 
 // TODO: detect if another server is running and prevent the execution
 // TODO: handle if IPCs with the same key are already present
@@ -153,6 +158,10 @@ void init()
     initSemaphores();
     initSharedMemory();
     initSignals();
+    if ((outputCustomizable = initOutputSettings(&withEcho, &withoutEcho)))
+    {
+        setInput(&withoutEcho);
+    }
 
     // Loading complete
     printLoadingCompleteMessage();
@@ -161,7 +170,17 @@ void init()
 
 void printGameSettings()
 {
-    printf(GAME_SETTINGS_MESSAGE, parsedTimeout, playerOneSymbol, playerTwoSymbol);
+    printAndFlush(GAME_SETTINGS_MESSAGE);
+    if (parsedTimeout == 0)
+    {
+        printAndFlush(INFINITE_TIMEOUT_SETTINGS_MESSAGE);
+    }
+    else
+    {
+        printf(TIMEOUT_SETTINGS_MESSAGE, parsedTimeout);
+    }
+    printf(PLAYER_ONE_SYMBOL_SETTINGS_MESSAGE, playerOneSymbol);
+    printf(PLAYER_TWO_SYMBOL_SETTINGS_MESSAGE, playerTwoSymbol);
 }
 
 void initSharedMemory()
@@ -217,9 +236,17 @@ void disposeSemaphores()
     disposeSemaphore(semId);
 }
 
+void showInput()
+{
+    setInput(&withEcho);
+    ignorePreviousInput();
+}
+
 void setAtExitCleanup()
 {
-    if (atexit(disposeSemaphores) || atexit(disposeMemory))
+    if (atexit(disposeSemaphores) ||
+        atexit(disposeMemory) ||
+        atexit(showInput))
     {
         printError(INITIALIZATION_ERROR);
         exit(EXIT_FAILURE);
@@ -239,7 +266,7 @@ void initSignals()
 
     if (signal(SIGINT, exitHandler) == SIG_ERR ||
         signal(SIGTERM, exitHandler) == SIG_ERR ||
-        signal(SIGHUP, exitHandler) == SIG_ERR ||
+        signal(SIGHUP, serverQuit) == SIG_ERR ||
         signal(SIGUSR1, playerQuitHandler) == SIG_ERR ||
         signal(SIGUSR2, playerQuitHandler) == SIG_ERR)
     {
@@ -248,14 +275,20 @@ void initSignals()
     }
 }
 
+void serverQuit(int sig)
+{
+    printf(CLOSING_MESSAGE);
+    notifyServerQuit();
+    exit(EXIT_SUCCESS);
+}
+
 void exitHandler(int sig)
 {
     if (firstCTRLCPressed)
     {
-        printf(CLOSING_MESSAGE);
-        notifyServerQuit();
-        exit(EXIT_SUCCESS);
+        serverQuit(sig);
     }
+
     firstCTRLCPressed = true;
     printf(CTRLC_AGAIN_TO_QUIT_MESSAGE);
 }
