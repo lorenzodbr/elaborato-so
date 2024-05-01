@@ -72,24 +72,26 @@
 #define RESULT_ID 313
 #define SYMBOLS_ID 413
 #define TIMEOUT_ID 513
+#define GAME_ID 613
 #define FTOK_PATH ".config"
 
 // Semaphore indexes
-#define N_SEM 8
+#define N_SEM 6
 #define WAIT_FOR_PLAYERS 0
 #define WAIT_FOR_OPPONENT_READY 1
-#define LOCK 2
+#define PID_LOCK 2
 #define PLAYER_ONE_TURN 3
 #define PLAYER_TWO_TURN 4
 #define WAIT_FOR_MOVE 5
 
 // Sizes
 #define MATRIX_SIDE_LEN 3
-#define MATRIX_SIZE MATRIX_SIDE_LEN *MATRIX_SIDE_LEN * sizeof(char)
-#define PID_SIZE 3 * sizeof(pid_t)
-#define RESULT_SIZE sizeof(int)
-#define SYMBOLS_SIZE 2 * sizeof(char)
-#define INPUT_LEN 2
+#define MATRIX_SIZE MATRIX_SIDE_LEN * MATRIX_SIDE_LEN
+#define GAME_SIZE sizeof(tris_game_t)
+#define MOVE_INPUT_LEN 2
+#define PID_ARRAY_LEN 3
+#define USERNAMES_ARRAY_LEN 2
+#define SYMBOLS_ARRAY_LEN 2
 
 // ----------------- GAME --------------------
 
@@ -124,16 +126,16 @@
 #define SERVER_QUIT_MESSAGE FRED "\n\nIl server ha terminato la partita.\n"
 #define MY_PID_MESSAGE SUCCESS_CHAR "PID = %d\n"
 #define CTRLC_AGAIN_TO_QUIT_MESSAGE FYEL "\n\nPremi CTRL+C di nuovo per uscire." FNRM "\n"
-#define WINS_PLAYER_MESSAGE FGRN SUCCESS_CHAR "Vince il giocatore %d (con PID = %d).\n"
-#define WAITING_FOR_MOVE_SERVER_MESSAGE "In attesa della mossa del %sgiocatore %d%s (con PID = %d)...\n"
-#define MOVE_RECEIVED_SERVER_MESSAGE "Mossa ricevuta dal %sgiocatore %d%s (con PID = %d).\n\n"
+#define WINS_PLAYER_MESSAGE "Vince il giocatore %d (con PID = %d).\n"
+#define WAITING_FOR_MOVE_SERVER_MESSAGE "In attesa della mossa del %sgiocatore %d%s (con PID = %d)... "
+#define MOVE_RECEIVED_SERVER_MESSAGE "\nMossa ricevuta dal %sgiocatore %d%s (con PID = %d).\n"
 #define A_PLAYER_JOINED_SERVER_MESSAGE "\nUn giocatore con PID = %d (%c) è entrato in partita. "
 #define ANOTHER_PLAYER_JOINED_SERVER_MESSAGE "Un altro giocatore con PID = %d (%c) è entrato in partita. \n\n" INFO_CHAR " Pronti per cominciare. "
 #define A_PLAYER_QUIT_SERVER_MESSAGE "\nIl giocatore %d (con PID = %d) ha abbandonato la partita.\n\n"
-#define STARTS_PLAYER_MESSAGE "Inizia il giocatore %d (con PID = %d).\n\n"
+#define STARTS_PLAYER_MESSAGE "Inizia il giocatore %d (con PID = %d).\n"
 #define DRAW_MESSAGE FYEL WARNING_CHAR "Pareggio.\n"
 #define CLOSING_MESSAGE FYEL "\nChiusura in corso...\n"
-#define YOU_WON_FOR_QUIT_MESSAGE FGRN "Hai vinto per abbandono dell'altro giocatore!\n"
+#define YOU_WON_FOR_QUIT_MESSAGE FGRN SUCCESS_CHAR "Hai vinto per abbandono dell'altro giocatore!\n"
 #define YOU_LOST_MESSAGE FRED ERROR_CHAR "Hai perso!\n"
 #define YOU_WON_MESSAGE FGRN SUCCESS_CHAR "Hai vinto!\n"
 #define INPUT_A_MOVE_MESSAGE "Inserisci la mossa (LetteraNumero): "
@@ -156,16 +158,18 @@
 #define SHARED_MEMORY_OBTAINED_SUCCESS FGRN SUCCESS_CHAR "Memoria condivisa ottenuta (ID: %d).\n" FNRM
 #define SHARED_MEMORY_INITIALIZED_SUCCESS FGRN SUCCESS_CHAR "Memoria condivisa deallocata.\n" FNRM
 #define SHARED_MEMORY_ATTACHED_SUCCESS FGRN SUCCESS_CHAR "Memoria condivisa agganciata (@ %p).\n" FNRM
+#define SHARED_MEMORY_DEALLOCATION_SUCCESS FGRN SUCCESS_CHAR "Memoria condivisa deallocata.\n" FNRM
 
 // ----------------- ERRORS ------------------
 
 // General errors
 #define USAGE_ERROR_SERVER "Uso: ./TrisServer <timeout> <playerOneSymbol> <playerTwoSymbol>"
 #define USAGE_ERROR_CLIENT "Uso: ./TrisClient <username>"
-#define TOO_MANY_PLAYERS_ERROR "\nTroppi giocatori connessi. Riprova più tardi.\n"
+#define TOO_MANY_PLAYERS_ERROR "Troppi giocatori connessi. Riprova più tardi.\n"
 #define INITIALIZATION_ERROR "Errore durante l'inizializzazione."
 #define INVALID_MOVE_ERROR "Mossa non valida. Riprova: "
 #define NO_SERVER_FOUND_ERROR "Nessun server trovato. Esegui TrisServer prima di eseguire TrisClient.\n"
+#define SERVER_ALREADY_RUNNING_ERROR "Il server è già in esecuzione. Esegui un solo server alla volta.\n"
 
 // Args errors
 #define TIMEOUT_INVALID_CHAR_ERROR "Il valore specificato per il timeout non è valido."
@@ -179,11 +183,13 @@
 #define SEMAPHORE_DEALLOCATION_ERROR "Errore durante la deallocazione dei semafori."
 #define SEMAPHORE_WAITING_ERROR "Errore durante l'attesa del semaforo."
 #define SEMAPHORE_SIGNALING_ERROR "Errore durante il rilascio del semaforo."
+#define SEMAPHORE_GETTING_ERROR "Errore durante l'ottenimento di dati sul semaforo."
 
 // Shared memory errors
 #define SHARED_MEMORY_ALLOCATION_ERROR "Errore durante la creazione della memoria condivisa."
 #define SHARED_MEMORY_ATTACH_ERROR "Errore durante l'aggancio della memoria condivisa."
 #define SHARED_MEMORY_DEALLOCATION_ERROR "Errore durante la deallocazione della memoria condivisa."
+#define SHARED_MEMORY_STATUS_ERROR "Errore durante l'ottenimento di dati sulla memoria condivisa."
 
 // Fork errors
 #define FORK_ERROR "Errore durante la creazione di un processo figlio."

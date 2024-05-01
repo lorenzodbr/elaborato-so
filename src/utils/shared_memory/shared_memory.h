@@ -32,7 +32,7 @@ void disposeSharedMemory(int shmid)
     }
 
 #if DEBUG
-    printf(SHARED_MEMORY_DISPOSED_SUCCESS)
+    printf(SHARED_MEMORY_DEALLOCATION_SUCCESS);
 #endif
 }
 
@@ -49,4 +49,12 @@ void *attachSharedMemory(int shmid)
 #endif
 
     return addr;
+}
+
+bool areThereAttachedProcesses()
+{
+    // check if there are attached processes by checking
+    // if the shared memory is obtainable without creating it
+    // (only the first server is capable of this)
+    return getSharedMemory(0, GAME_ID) > -1;
 }

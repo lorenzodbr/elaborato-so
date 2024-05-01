@@ -11,9 +11,9 @@
 
 void parseArgs(int argc, char *argv[]);
 void init();
+void initTerminal();
 void initSharedMemory();
 void initSemaphores();
-void setAtExitCleanup();
 void waitForPlayers();
 void disposeMemory();
 void disposeSemaphores();
@@ -27,43 +27,27 @@ void playerQuitHandler(int sig);
 void waitForMove();
 void notifyNextMove();
 void printGameSettings();
-void serverQuit();
+void serverQuit(int sig);
+void showInput();
+void printResult();
 
 // Shared memory
-int *matrix;
-int matId;
-
-pid_t *pids;
-int pidId;
-
-int *result;
-int resId;
-
-char *symbols;
-int symId;
-
-int *timeout;
-int timId;
+tris_game_t *game;
+int gameId;
 
 // Semaphores
 int semId;
-
-// Settings
-char playerOneSymbol;
-char playerTwoSymbol;
 
 // State variables
 bool firstCTRLCPressed = false;
 bool started = false;
 int turn = INITIAL_TURN;
 int playersCount = 0;
-int parsedTimeout;
 
 // Terminal settings
 struct termios withEcho, withoutEcho;
 bool outputCustomizable = true;
 
-// TODO: detect if another server is running and prevent the execution
 // TODO: handle if IPCs with the same key are already present
 
 int main(int argc, char *argv[])
@@ -74,8 +58,8 @@ int main(int argc, char *argv[])
     }
 
     // Initialization
-    parseArgs(argc, argv);
     init();
+    parseArgs(argc, argv);
 
     // Waiting for other players
     waitForPlayers();
@@ -85,13 +69,15 @@ int main(int argc, char *argv[])
 
     // ...and game can start
     started = true;
-    printf(STARTS_PLAYER_MESSAGE, turn, pids[turn]);
+    printf(STARTS_PLAYER_MESSAGE, turn, game->pids[turn]);
 
     // Game loop
-    while ((*result = isGameEnded(matrix)) == NOT_FINISHED)
+    while ((game->result = isGameEnded(game->matrix)) == NOT_FINISHED)
     {
 #if DEBUG
-        printBoard(matrix, playerOneSymbol, playerTwoSymbol);
+        printBoard(game->matrix, game->symbols[0], game->symbols[1]);
+#else
+        printf(NEWLINE);
 #endif
         // Wait for move
         waitForMove();
@@ -101,19 +87,11 @@ int main(int argc, char *argv[])
     }
 
     // If the game is ended (i.e. no more in the loop), print the result
-    switch (*result)
-    {
-    case 0:
-        printf(DRAW_MESSAGE);
-        break;
-    case 1:
-    case 2:
-        printf(WINS_PLAYER_MESSAGE, *result, pids[*result]);
-        break;
-    }
+    printResult();
 
-    // Notify the player(s) still connected
+    // Notify the player(s) still connected that the game is ended
     notifyGameEnded();
+
     exit(EXIT_SUCCESS);
 }
 
@@ -121,13 +99,13 @@ void parseArgs(int argc, char *argv[])
 {
     // Parsing timeout
     char *endptr;
-    parsedTimeout = strtol(argv[1], &endptr, 10);
+    game->timeout = strtol(argv[1], &endptr, 10);
     if (*endptr != '\0')
     {
         errExit(TIMEOUT_INVALID_CHAR_ERROR);
     }
 
-    if (parsedTimeout < MINIMUM_TIMEOUT && parsedTimeout != 0)
+    if (game->timeout < MINIMUM_TIMEOUT && game->timeout != 0)
     {
         errExit(TIMEOUT_TOO_LOW_ERROR);
     }
@@ -138,10 +116,10 @@ void parseArgs(int argc, char *argv[])
         errExit(SYMBOLS_LENGTH_ERROR);
     }
 
-    playerOneSymbol = argv[2][0];
-    playerTwoSymbol = argv[3][0];
+    game->symbols[0] = argv[2][0];
+    game->symbols[1] = argv[3][0];
 
-    if (playerOneSymbol == playerTwoSymbol)
+    if (game->symbols[0] == game->symbols[1])
     {
         errExit(SYMBOLS_EQUAL_ERROR);
     }
@@ -153,15 +131,19 @@ void init()
     printWelcomeMessageServer();
     printLoadingMessage();
 
+    // Check if another server is running
+    if (areThereAttachedProcesses(gameId))
+    {
+        errExit(SERVER_ALREADY_RUNNING_ERROR);
+    }
+
+    // Terminal settings
+    initTerminal();
+
     // Data structures
-    setAtExitCleanup();
     initSemaphores();
     initSharedMemory();
     initSignals();
-    if ((outputCustomizable = initOutputSettings(&withEcho, &withoutEcho)))
-    {
-        setInput(&withoutEcho);
-    }
 
     // Loading complete
     printLoadingCompleteMessage();
@@ -171,49 +153,68 @@ void init()
 void printGameSettings()
 {
     printAndFlush(GAME_SETTINGS_MESSAGE);
-    if (parsedTimeout == 0)
+    if (game->timeout == 0)
     {
         printAndFlush(INFINITE_TIMEOUT_SETTINGS_MESSAGE);
     }
     else
     {
-        printf(TIMEOUT_SETTINGS_MESSAGE, parsedTimeout);
+        printf(TIMEOUT_SETTINGS_MESSAGE, game->timeout);
     }
-    printf(PLAYER_ONE_SYMBOL_SETTINGS_MESSAGE, playerOneSymbol);
-    printf(PLAYER_TWO_SYMBOL_SETTINGS_MESSAGE, playerTwoSymbol);
+    printf(PLAYER_ONE_SYMBOL_SETTINGS_MESSAGE, game->symbols[0]);
+    printf(PLAYER_TWO_SYMBOL_SETTINGS_MESSAGE, game->symbols[1]);
+}
+
+void printResult()
+{
+    printBoard(game->matrix, game->symbols[0], game->symbols[1]);
+
+    switch (game->result)
+    {
+    case 0:
+        printf(DRAW_MESSAGE);
+        break;
+    case 1:
+    case 2:
+        printf(WINS_PLAYER_MESSAGE, game->result, game->pids[game->result]);
+        break;
+    }
+}
+
+void initTerminal()
+{
+    if ((outputCustomizable = initOutputSettings(&withEcho, &withoutEcho)))
+    {
+        setInput(&withoutEcho);
+
+        if (atexit(showInput))
+        {
+            printError(INITIALIZATION_ERROR);
+            exit(EXIT_FAILURE);
+        }
+    }
 }
 
 void initSharedMemory()
 {
-    matId = getAndInitSharedMemory(MATRIX_SIZE, MATRIX_ID);
-    matrix = (int *)attachSharedMemory(matId);
-    initBoard(matrix);
+    gameId = getAndInitSharedMemory(GAME_SIZE, GAME_ID);
 
-    pidId = getAndInitSharedMemory(PID_SIZE, PID_ID);
-    pids = (pid_t *)attachSharedMemory(pidId);
-    initPids(pids);
-    setPidAt(pids, 0, getpid());
+    game = (tris_game_t *)attachSharedMemory(gameId);
 
-    resId = getAndInitSharedMemory(RESULT_SIZE, RESULT_ID);
-    result = (int *)attachSharedMemory(resId);
+    if (atexit(disposeMemory))
+    {
+        printError(INITIALIZATION_ERROR);
+        exit(EXIT_FAILURE);
+    }
 
-    symId = getAndInitSharedMemory(SYMBOLS_SIZE, SYMBOLS_ID);
-    symbols = (char *)attachSharedMemory(symId);
-    symbols[0] = playerOneSymbol;
-    symbols[1] = playerTwoSymbol;
-
-    timId = getAndInitSharedMemory(sizeof(int), TIMEOUT_ID);
-    timeout = (int *)attachSharedMemory(timId);
-    *timeout = parsedTimeout;
+    initBoard(game->matrix);
+    initPids(game->pids);
+    setPidAt(game->pids, 0, getpid());
 }
 
 void disposeMemory()
 {
-    disposeSharedMemory(matId);
-    disposeSharedMemory(pidId);
-    disposeSharedMemory(resId);
-    disposeSharedMemory(symId);
-    disposeSharedMemory(timId);
+    disposeSharedMemory(gameId);
 }
 
 void initSemaphores()
@@ -223,12 +224,18 @@ void initSemaphores()
     short unsigned values[N_SEM];
     values[WAIT_FOR_PLAYERS] = 0;
     values[WAIT_FOR_OPPONENT_READY] = 0;
-    values[LOCK] = 1;
+    values[PID_LOCK] = 1;
     values[PLAYER_ONE_TURN] = INITIAL_TURN == PLAYER_ONE ? 1 : 0;
     values[PLAYER_TWO_TURN] = INITIAL_TURN == PLAYER_TWO ? 1 : 0;
     values[WAIT_FOR_MOVE] = 0;
 
     setSemaphores(semId, N_SEM, values);
+
+    if (atexit(disposeSemaphores))
+    {
+        printError(INITIALIZATION_ERROR);
+        exit(EXIT_FAILURE);
+    }
 }
 
 void disposeSemaphores()
@@ -240,17 +247,6 @@ void showInput()
 {
     setInput(&withEcho);
     ignorePreviousInput();
-}
-
-void setAtExitCleanup()
-{
-    if (atexit(disposeSemaphores) ||
-        atexit(disposeMemory) ||
-        atexit(showInput))
-    {
-        printError(INITIALIZATION_ERROR);
-        exit(EXIT_FAILURE);
-    }
 }
 
 void initSignals()
@@ -298,14 +294,14 @@ void playerQuitHandler(int sig)
     int playerWhoQuitted = sig == SIGUSR1 ? PLAYER_ONE : PLAYER_TWO;
     int playerWhoStayed = playerWhoQuitted == PLAYER_ONE ? PLAYER_TWO : PLAYER_ONE;
 
-    printf(A_PLAYER_QUIT_SERVER_MESSAGE, playerWhoQuitted, pids[playerWhoQuitted]);
-    setPidAt(pids, playerWhoQuitted, 0);
+    printf(A_PLAYER_QUIT_SERVER_MESSAGE, playerWhoQuitted, game->pids[playerWhoQuitted]);
+    setPidAt(game->pids, playerWhoQuitted, 0);
     playersCount--;
 
     if (started)
     {
-        *result = QUIT;
-        printf(WINS_PLAYER_MESSAGE, playerWhoStayed, pids[playerWhoStayed]);
+        game->result = QUIT;
+        printf(WINS_PLAYER_MESSAGE, playerWhoStayed, game->pids[playerWhoStayed]);
         notifyPlayerWhoWonForQuit(playerWhoStayed);
         exit(EXIT_SUCCESS);
     }
@@ -330,9 +326,9 @@ void waitForPlayers()
         printAndFlush(NEWLINE);
 
         if (++playersCount == 1)
-            printf(A_PLAYER_JOINED_SERVER_MESSAGE, pids[PLAYER_ONE], playerOneSymbol);
+            printf(A_PLAYER_JOINED_SERVER_MESSAGE, game->pids[PLAYER_ONE], game->symbols[0]);
         else if (playersCount == 2)
-            printf(ANOTHER_PLAYER_JOINED_SERVER_MESSAGE, pids[PLAYER_TWO], playerTwoSymbol);
+            printf(ANOTHER_PLAYER_JOINED_SERVER_MESSAGE, game->pids[PLAYER_TWO], game->symbols[1]);
 
         fflush(stdout);
     }
@@ -345,29 +341,30 @@ void notifyOpponentReady()
 
 void notifyPlayerWhoWonForQuit(int playerWhoWon)
 {
-    kill(pids[playerWhoWon], SIGUSR2);
+    kill(game->pids[playerWhoWon], SIGUSR2);
 }
 
 void notifyGameEnded()
 {
-    kill(pids[PLAYER_ONE], SIGUSR2);
-    kill(pids[PLAYER_TWO], SIGUSR2);
+    kill(game->pids[PLAYER_ONE], SIGUSR2);
+    kill(game->pids[PLAYER_TWO], SIGUSR2);
 }
 
 void notifyServerQuit()
 {
-    if (pids[PLAYER_ONE] != 0)
-        kill(pids[PLAYER_ONE], SIGUSR1);
+    if (game->pids[PLAYER_ONE] != 0)
+        kill(game->pids[PLAYER_ONE], SIGUSR1);
 
-    if (pids[PLAYER_TWO] != 0)
-        kill(pids[PLAYER_TWO], SIGUSR1);
+    if (game->pids[PLAYER_TWO] != 0)
+        kill(game->pids[PLAYER_TWO], SIGUSR1);
 }
 
 void waitForMove()
 {
     char *color = turn == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR;
 
-    printf(WAITING_FOR_MOVE_SERVER_MESSAGE, color, turn, FNRM, pids[turn]);
+    printf(WAITING_FOR_MOVE_SERVER_MESSAGE, color, turn, FNRM, game->pids[turn]);
+    fflush(stdout);
 
     do
     {
@@ -380,7 +377,7 @@ void notifyNextMove()
 {
     char *color = turn == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR;
 
-    printf(MOVE_RECEIVED_SERVER_MESSAGE, color, turn, FNRM, pids[turn]);
+    printf(MOVE_RECEIVED_SERVER_MESSAGE, color, turn, FNRM, game->pids[turn]);
 
     turn = turn == 1 ? 2 : 1;
     signalSemaphore(semId, PLAYER_ONE_TURN + turn - 1, 1);

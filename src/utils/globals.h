@@ -12,6 +12,15 @@ typedef struct
     int col;
 } move_t;
 
+typedef struct {
+    int matrix[MATRIX_SIZE];
+    pid_t pids[PID_ARRAY_LEN];
+    char *username[USERNAMES_ARRAY_LEN];
+    int result;
+    char symbols[SYMBOLS_ARRAY_LEN];
+    int timeout;
+} tris_game_t;
+
 void printHeaderServer()
 {
     printf(CLEAR_SCREEN);
@@ -211,8 +220,8 @@ int setPid(int *pidsPointer, int pid)
 {
     int semId = getSemaphores(N_SEM), playerIndex = -1;
 
-    waitSemaphore(semId, LOCK, 1);
-    for (int i = 0; i < 3; i++)
+    waitSemaphore(semId, PID_LOCK, 1);
+    for (int i = 0; i < PID_ARRAY_LEN; i++)
     {
         if (pidsPointer[i] == 0)
         {
@@ -221,7 +230,7 @@ int setPid(int *pidsPointer, int pid)
             break;
         }
     }
-    signalSemaphore(semId, LOCK, 1);
+    signalSemaphore(semId, PID_LOCK, 1);
 
     return playerIndex;
 }
@@ -230,9 +239,9 @@ void setPidAt(int *pidsPointer, int index, int pid)
 {
     int semId = getSemaphores(N_SEM);
 
-    waitSemaphore(semId, LOCK, 1);
+    waitSemaphore(semId, PID_LOCK, 1);
     pidsPointer[index] = pid;
-    signalSemaphore(semId, LOCK, 1);
+    signalSemaphore(semId, PID_LOCK, 1);
 }
 
 int getPid(int *pidsPointer, int index)

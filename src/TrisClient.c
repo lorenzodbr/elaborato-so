@@ -25,26 +25,16 @@ void serverQuitHandler(int sig);
 void waitForMove();
 void waitForResponse();
 void printMoveScreen();
-void setAtExitCleanup();
 void initTimeout();
 void resetTimeout();
 void timeoutHandler(int sig);
+void showInput();
+void initTerminalSettings();
 
 // Shared memory
-int *matrix;
-int matId;
 
-int *pids;
-pid_t pidId;
-
-int *result;
-int resId;
-
-char *symbols;
-int symId;
-
-int *timeout;
-int timId;
+tris_game_t *game;
+int gameId;
 
 // Semaphores
 int semId;
@@ -105,31 +95,28 @@ void init()
     initSemaphores();
     initSharedMemory();
     initSignals();
-    if ((outputCustomizable = initOutputSettings(&withEcho, &withoutEcho)))
-    {
-        setInput(&withoutEcho);
-    }
-    setAtExitCleanup();
+    initTerminalSettings();
 
     printLoadingCompleteMessage();
 }
 
 void initSharedMemory()
 {
-    matId = getSharedMemory(MATRIX_SIZE, MATRIX_ID);
-
-    if (matId < 0)
+    gameId = getSharedMemory(GAME_SIZE, GAME_ID);
+    if (gameId < 0)
     {
         printError(NO_SERVER_FOUND_ERROR);
         exit(EXIT_FAILURE);
     }
 
-    matrix = (int *)attachSharedMemory(matId);
+    game = attachSharedMemory(gameId);
 
-    pidId = getSharedMemory(PID_SIZE, PID_ID);
-    pids = (pid_t *)attachSharedMemory(pidId);
 
-    playerIndex = setPid(pids, getpid());
+#if DEBUG
+    printf(SHARED_MEMORY_OBTAINED_SUCCESS, gameId);
+#endif
+
+    playerIndex = setPid(game->pids, getpid());
 
     if (playerIndex == -1)
     {
@@ -137,17 +124,8 @@ void initSharedMemory()
         exit(EXIT_FAILURE);
     }
 
-    symId = getSharedMemory(SYMBOLS_SIZE, SYMBOLS_ID);
-    symbols = (char *)attachSharedMemory(symId);
-
-    resId = getSharedMemory(RESULT_SIZE, RESULT_ID);
-    result = (int *)attachSharedMemory(resId);
-
-    timId = getSharedMemory(sizeof(int), TIMEOUT_ID);
-    timeout = (int *)attachSharedMemory(timId);
-
 #if DEBUG
-    printf(SERVER_FOUND_SUCCESS, *pids);
+    printf(SERVER_FOUND_SUCCESS, game->pids[SERVER]);
 #endif
 }
 
@@ -179,17 +157,23 @@ void initSignals()
     }
 }
 
+void initTerminalSettings()
+{
+    if ((outputCustomizable = initOutputSettings(&withEcho, &withoutEcho)))
+    {
+        setInput(&withoutEcho);
+    }
+    
+    if(atexit(showInput))
+    {
+        printError(INITIALIZATION_ERROR);
+        exit(EXIT_FAILURE);
+    }
+}
+
 void showInput()
 {
     setInput(&withEcho);
-}
-
-void setAtExitCleanup()
-{
-    if (atexit(showInput))
-    {
-        errExit(INITIALIZATION_ERROR);
-    }
 }
 
 void notifyPlayerReady()
@@ -244,18 +228,18 @@ void timeoutHandler(int sig)
 
 void initTimeout()
 {
-    if (*timeout == 0)
+    if (game->timeout == 0)
     {
         return;
     }
 
-    alarm(*timeout);
+    alarm(game->timeout);
     signal(SIGALRM, timeoutHandler);
 }
 
 void resetTimeout()
 {
-    if (*timeout == 0)
+    if (game->timeout == 0)
     {
         return;
     }
@@ -265,7 +249,7 @@ void resetTimeout()
 
 void askForInput()
 {
-    char input[INPUT_LEN];
+    char input[MOVE_INPUT_LEN];
 
     showInput(withoutEcho);
     initTimeout();
@@ -275,7 +259,7 @@ void askForInput()
 
     move_t move;
 
-    while (!isValidMove(matrix, input, &move))
+    while (!isValidMove(game->matrix, input, &move))
     {
         firstCTRLCPressed = false; // reset firstCTRLCPressed if something else is inserted
 
@@ -283,7 +267,7 @@ void askForInput()
         scanf("%s", input);
     }
 
-    matrix[move.row + move.col * MATRIX_SIDE_LEN] = playerIndex;
+    game->matrix[move.row + move.col * MATRIX_SIDE_LEN] = playerIndex;
 
     resetTimeout();
 }
@@ -291,24 +275,24 @@ void askForInput()
 void printMoveScreen()
 {
     clearScreenClient();
-    printSymbol(symbols[playerIndex - 1], playerIndex, username);
-    printTimeout(*timeout);
-    printBoard(matrix, symbols[0], symbols[1]);
+    printSymbol(game->symbols[playerIndex - 1], playerIndex, username);
+    printTimeout(game->timeout);
+    printBoard(game->matrix, game->symbols[0], game->symbols[1]);
 }
 
 void checkResults(int sig)
 {
     printMoveScreen();
 
-    if (*result == DRAW)
+    if (game->result == DRAW)
     {
         printf(DRAW_MESSAGE);
     }
-    else if (*result == QUIT)
+    else if (game->result == QUIT)
     {
         printf(YOU_WON_FOR_QUIT_MESSAGE);
     }
-    else if (*result != playerIndex)
+    else if (game->result != playerIndex)
     {
         printf(YOU_LOST_MESSAGE);
     }
@@ -324,7 +308,7 @@ void exitHandler(int sig)
 {
     if (firstCTRLCPressed)
     {
-        kill(pids[SERVER], playerIndex == 1 ? SIGUSR1 : SIGUSR2);
+        kill(game->pids[SERVER], playerIndex == 1 ? SIGUSR1 : SIGUSR2);
         printf(CLOSING_MESSAGE);
         exit(EXIT_SUCCESS);
     }
@@ -334,7 +318,7 @@ void exitHandler(int sig)
 
 void quitHandler(int sig)
 {
-    kill(pids[SERVER], playerIndex == 1 ? SIGUSR1 : SIGUSR2);
+    kill(game->pids[SERVER], playerIndex == 1 ? SIGUSR1 : SIGUSR2);
 }
 
 void serverQuitHandler(int sig)
