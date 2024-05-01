@@ -24,14 +24,14 @@ void signalSemaphore(int semid, int semnum, int value);
 
 int getSemaphores(int nsems)
 {
-    int semId = semget(SEM_ID, nsems, IPC_CREAT | 0640);
+    int semId = semget(SEM_ID, nsems, IPC_CREAT | PERM);
     if (semId < 0)
     {
-        errExit("semget");
+        errExit(SEMAPHORE_INITIALIZATION_ERROR);
     }
 
 #if DEBUG
-    printf(FGRN SUCCESS_CHAR "Semafori ottenuti.\n" FNRM);
+    printf(SEMAPHORE_OBTAINED_SUCCESS);
 #endif
 
     return semId;
@@ -41,11 +41,11 @@ void setSemaphore(int semid, int semnum, int value)
 {
     if (semctl(semid, semnum, SETVAL, value) < 0)
     {
-        errExit("semctl");
+        errExit(SEMAPHORE_INITIALIZATION_ERROR);
     }
 
 #if DEBUG
-    printf(FGRN SUCCESS_CHAR "Semafori inizializzati.\n" FNRM);
+    printf(SEMAPHORES_INITIALIZED_SUCCESS);
 #endif
 }
 
@@ -56,11 +56,11 @@ void setSemaphores(int semid, int nsems, short unsigned *values)
 
     if (semctl(semid, 0, SETALL, arg) < 0)
     {
-        errExit("semctl");
+        errExit(SEMAPHORE_INITIALIZATION_ERROR);
     }
 
 #if DEBUG
-    printf(FGRN SUCCESS_CHAR "Semafori inizializzati.\n" FNRM);
+    printf(SEMAPHORES_INITIALIZED_SUCCESS);
 #endif
 }
 
@@ -68,11 +68,11 @@ void disposeSemaphore(int semid)
 {
     if (semctl(semid, 0, IPC_RMID) < 0)
     {
-        errExit("semctl");
+        errExit(SEMAPHORE_DEALLOCATION_ERROR);
     }
 
 #if DEBUG
-    printf(FGRN SUCCESS_CHAR "Semafori deallocati.\n" FNRM);
+    printf(SEMAPHORES_DISPOSED_SUCCESS);
 #endif
 }
 
@@ -86,7 +86,7 @@ void waitSemaphore(int semid, int semnum, int value)
     int semopRet = semop(semid, &sops, 1);
     if (semopRet < 0 && errno != EINTR)
     {
-        errExit("semop");
+        errExit(SEMAPHORE_WAITING_ERROR);
     }
 }
 
@@ -97,6 +97,6 @@ void signalSemaphore(int semid, int semnum, int value)
     int semopRet = semop(semid, &sops, 1);
     if (semopRet < 0 && errno != EINTR)
     {
-        errExit("semop");
+        errExit(SEMAPHORE_SIGNALING_ERROR);
     }
 }

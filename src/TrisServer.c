@@ -9,6 +9,7 @@
 #include "utils/globals.h"
 #include "utils/shared_memory/shared_memory.h"
 
+void parseArgs(int argc, char *argv[]);
 void init();
 void initSharedMemory();
 void initSemaphores();
@@ -24,6 +25,8 @@ void notifyServerQuit();
 void exitHandler(int sig);
 void playerQuitHandler(int sig);
 void waitForMove();
+void notifyNextMove();
+void printGameSettings();
 
 // Shared memory
 int *matrix;
@@ -38,11 +41,13 @@ int resId;
 char *symbols;
 int symId;
 
+int *timeout;
+int timId;
+
 // Semaphores
 int semId;
 
 // Settings
-int timeout;
 char playerOneSymbol;
 char playerTwoSymbol;
 
@@ -51,6 +56,10 @@ bool firstCTRLCPressed = false;
 bool started = false;
 int turn = INITIAL_TURN;
 int playersCount = 0;
+int parsedTimeout;
+
+// TODO: detect if another server is running and prevent the execution
+// TODO: handle if IPCs with the same key are already present
 
 int main(int argc, char *argv[])
 {
@@ -59,32 +68,34 @@ int main(int argc, char *argv[])
         errExit(USAGE_ERROR_SERVER);
     }
 
-    timeout = atoi(argv[1]);
-    playerOneSymbol = argv[2][0];
-    playerTwoSymbol = argv[3][0];
-
-    if (strlen(argv[2]) != 1 || strlen(argv[3]) != 1)
-    {
-        printError(SYMBOLS_LENGTH_ERROR);
-        exit(EXIT_FAILURE);
-    }
-
+    // Initialization
+    parseArgs(argc, argv);
     init();
+
+    // Waiting for other players
     waitForPlayers();
+
+    // If the server is here, it means that both players are connected...
     notifyOpponentReady();
 
+    // ...and game can start
     started = true;
-
     printf(STARTS_PLAYER_MESSAGE, turn, pids[turn]);
 
+    // Game loop
     while ((*result = isGameEnded(matrix)) == NOT_FINISHED)
     {
 #if DEBUG
         printBoard(matrix, playerOneSymbol, playerTwoSymbol);
 #endif
+        // Wait for move
         waitForMove();
+
+        // Notify the next player
+        notifyNextMove();
     }
 
+    // If the game is ended (i.e. no more in the loop), print the result
     switch (*result)
     {
     case 0:
@@ -92,14 +103,43 @@ int main(int argc, char *argv[])
         break;
     case 1:
     case 2:
-        printf(WINS_PLAYER_MESSAGE,
-               *result, 
-               pids[*result]);
+        printf(WINS_PLAYER_MESSAGE, *result, pids[*result]);
         break;
     }
 
+    // Notify the player(s) still connected
     notifyGameEnded();
     exit(EXIT_SUCCESS);
+}
+
+void parseArgs(int argc, char *argv[])
+{
+    // Parsing timeout
+    char *endptr;
+    parsedTimeout = strtol(argv[1], &endptr, 10);
+    if (*endptr != '\0')
+    {
+        errExit(TIMEOUT_INVALID_CHAR_ERROR);
+    }
+
+    if (parsedTimeout < MINIMUM_TIMEOUT && parsedTimeout != 0)
+    {
+        errExit(TIMEOUT_TOO_LOW_ERROR);
+    }
+
+    // Parsing symbols
+    if (strlen(argv[2]) != 1 || strlen(argv[3]) != 1)
+    {
+        errExit(SYMBOLS_LENGTH_ERROR);
+    }
+
+    playerOneSymbol = argv[2][0];
+    playerTwoSymbol = argv[3][0];
+
+    if (playerOneSymbol == playerTwoSymbol)
+    {
+        errExit(SYMBOLS_EQUAL_ERROR);
+    }
 }
 
 void init()
@@ -116,6 +156,12 @@ void init()
 
     // Loading complete
     printLoadingCompleteMessage();
+    printGameSettings();
+}
+
+void printGameSettings()
+{
+    printf(GAME_SETTINGS_MESSAGE, parsedTimeout, playerOneSymbol, playerTwoSymbol);
 }
 
 void initSharedMemory()
@@ -136,6 +182,10 @@ void initSharedMemory()
     symbols = (char *)attachSharedMemory(symId);
     symbols[0] = playerOneSymbol;
     symbols[1] = playerTwoSymbol;
+
+    timId = getAndInitSharedMemory(sizeof(int), TIMEOUT_ID);
+    timeout = (int *)attachSharedMemory(timId);
+    *timeout = parsedTimeout;
 }
 
 void disposeMemory()
@@ -144,6 +194,7 @@ void disposeMemory()
     disposeSharedMemory(pidId);
     disposeSharedMemory(resId);
     disposeSharedMemory(symId);
+    disposeSharedMemory(timId);
 }
 
 void initSemaphores()
@@ -180,11 +231,15 @@ void initSignals()
     sigset_t set;
     sigfillset(&set);
     sigdelset(&set, SIGINT);
+    sigdelset(&set, SIGTERM);
+    sigdelset(&set, SIGHUP);
     sigdelset(&set, SIGUSR1);
     sigdelset(&set, SIGUSR2);
     sigprocmask(SIG_SETMASK, &set, NULL);
 
     if (signal(SIGINT, exitHandler) == SIG_ERR ||
+        signal(SIGTERM, exitHandler) == SIG_ERR ||
+        signal(SIGHUP, exitHandler) == SIG_ERR ||
         signal(SIGUSR1, playerQuitHandler) == SIG_ERR ||
         signal(SIGUSR2, playerQuitHandler) == SIG_ERR)
     {
@@ -239,10 +294,14 @@ void waitForPlayers()
             waitSemaphore(semId, WAIT_FOR_PLAYERS, 1);
         } while (errno == EINTR);
 
+        printAndFlush(NEWLINE);
+
         if (++playersCount == 1)
             printf(A_PLAYER_JOINED_SERVER_MESSAGE, pids[PLAYER_ONE], playerOneSymbol);
         else if (playersCount == 2)
             printf(ANOTHER_PLAYER_JOINED_SERVER_MESSAGE, pids[PLAYER_TWO], playerTwoSymbol);
+
+        fflush(stdout);
     }
 }
 
@@ -273,15 +332,22 @@ void notifyServerQuit()
 
 void waitForMove()
 {
-    printf(WAITING_FOR_MOVE_SERVER_MESSAGE, turn == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR, turn, FNRM, pids[turn]);
+    char *color = turn == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR;
+
+    printf(WAITING_FOR_MOVE_SERVER_MESSAGE, color, turn, FNRM, pids[turn]);
 
     do
     {
         errno = 0;
         waitSemaphore(semId, WAIT_FOR_MOVE, 1);
     } while (errno == EINTR);
+}
 
-    printf(MOVE_RECEIVED_SERVER_MESSAGE, turn, pids[turn]);
+void notifyNextMove()
+{
+    char *color = turn == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR;
+
+    printf(MOVE_RECEIVED_SERVER_MESSAGE, color, turn, FNRM, pids[turn]);
 
     turn = turn == 1 ? 2 : 1;
     signalSemaphore(semId, PLAYER_ONE_TURN + turn - 1, 1);

@@ -39,6 +39,9 @@ int resId;
 char *symbols;
 int symId;
 
+int *timeout;
+int timId;
+
 // Semaphores
 int semId;
 
@@ -92,6 +95,8 @@ void init()
     initSemaphores();
     initSharedMemory();
     initSignals();
+
+    printLoadingCompleteMessage();
 }
 
 void initSharedMemory()
@@ -120,13 +125,14 @@ void initSharedMemory()
     symId = getSharedMemory(SYMBOLS_SIZE, SYMBOLS_ID);
     symbols = (char *)attachSharedMemory(symId);
 
-    // printf(FNRM "\nTu sei il %sgiocatore %d%s. Hai il simbolo %s%c\n" FNRM, FYEL, playerIndex, FNRM, playerIndex == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR, symbols[playerIndex - 1]);
-
     resId = getSharedMemory(RESULT_SIZE, RESULT_ID);
     result = (int *)attachSharedMemory(resId);
 
+    timId = getSharedMemory(sizeof(int), TIMEOUT_ID);
+    timeout = (int *)attachSharedMemory(timId);
+
 #if DEBUG
-    printf(FGRN SUCCESS_CHAR "Trovato TrisServer con PID = %d\n" FNRM, *pids);
+    printf(SERVER_FOUND_SUCCESS, *pids);
 #endif
 }
 
@@ -144,6 +150,7 @@ void initSignals()
     sigdelset(&set, SIGUSR2);
     sigdelset(&set, SIGHUP);
     sigdelset(&set, SIGTERM);
+    sigdelset(&set, SIGALRM);
     sigprocmask(SIG_SETMASK, &set, NULL);
 
     if (signal(SIGINT, exitHandler) == SIG_ERR ||
@@ -169,9 +176,15 @@ void notifyMove()
 
 void waitForOpponent()
 {
-    printf(WAITING_FOR_OPPONENT_MESSAGE);
-    waitSemaphore(semId, WAIT_FOR_OPPONENT_READY, 1);
-    printf(OPPONENT_READY_MESSAGE);
+    printAndFlush(WAITING_FOR_OPPONENT_MESSAGE);
+
+    do
+    {
+        errno = 0;
+        waitSemaphore(semId, WAIT_FOR_OPPONENT_READY, 1);
+    } while (errno == EINTR);
+
+    printAndFlush(OPPONENT_READY_MESSAGE);
 }
 
 void waitForMove()
@@ -194,9 +207,39 @@ void waitForResponse()
     } while (errno == EINTR);
 }
 
+void timeoutHandler(int sig)
+{
+    printf(TIMEOUT_LOSS_MESSAGE);
+    quitHandler(sig);
+    exit(EXIT_FAILURE);
+}
+
+void initTimeout()
+{
+    if (*timeout == 0)
+    {
+        return;
+    }
+
+    alarm(*timeout);
+    signal(SIGALRM, timeoutHandler);
+}
+
+void resetTimeout()
+{
+    if (*timeout == 0)
+    {
+        return;
+    }
+
+    alarm(0);
+}
+
 void askForInput()
 {
     char input[INPUT_LEN];
+
+    initTimeout();
 
     printf(INPUT_A_MOVE_MESSAGE);
     scanf("%s", input);
@@ -212,12 +255,15 @@ void askForInput()
     }
 
     matrix[move.row + move.col * MATRIX_SIDE_LEN] = playerIndex;
+
+    resetTimeout();
 }
 
 void printMoveScreen()
 {
     clearScreenClient();
     printSymbol(symbols[playerIndex - 1], playerIndex, username);
+    printTimeout(*timeout);
     printBoard(matrix, symbols[0], symbols[1]);
 }
 

@@ -4,14 +4,14 @@
 
 int getAndInitSharedMemory(int size, int id)
 {
-    int shmid = shmget(id, size, IPC_CREAT | 0640);
+    int shmid = shmget(id, size, IPC_CREAT | PERM);
     if (shmid < 0)
     {
-        errExit("shmget");
+        errExit(SHARED_MEMORY_ALLOCATION_ERROR);
     }
 
 #if DEBUG
-    printf(FGRN SUCCESS_CHAR "Memoria condivisa ottenuta (ID: %d).\n" FNRM, shmid);
+    printf(SHARED_MEMORY_OBTAINED_SUCCESS, shmid);
 #endif
 
     return shmid;
@@ -19,7 +19,7 @@ int getAndInitSharedMemory(int size, int id)
 
 int getSharedMemory(int size, int id)
 {
-    int shmid = shmget(id, size, 0640);
+    int shmid = shmget(id, size, PERM);
 
     return shmid;
 }
@@ -28,11 +28,11 @@ void disposeSharedMemory(int shmid)
 {
     if (shmctl(shmid, IPC_RMID, NULL) < 0)
     {
-        errExit("shmctl");
+        errExit(SHARED_MEMORY_DEALLOCATION_ERROR);
     }
 
 #if DEBUG
-    printf(FGRN SUCCESS_CHAR "Memoria condivisa deallocata.\n" FNRM);
+    printf(SHARED_MEMORY_DISPOSED_SUCCESS)
 #endif
 }
 
@@ -41,11 +41,11 @@ void *attachSharedMemory(int shmid)
     void *addr = shmat(shmid, NULL, 0);
     if (addr == (void *)-1)
     {
-        errExit("shmat");
+        errExit(SHARED_MEMORY_ATTACH_ERROR);
     }
 
 #if DEBUG
-    printf(FGRN SUCCESS_CHAR "Memoria condivisa agganciata (@ %p).\n" FNRM, addr);
+    printf(SHARED_MEMORY_ATTACHED_SUCCESS, addr);
 #endif
 
     return addr;

@@ -34,7 +34,7 @@ void printWelcomeMessageClient(char *username)
 {
     printHeaderClient();
     printf(CREDITS);
-    printf(NO_BOLD FNRM "\nBenvenuto, %s%s! %s", FYEL, username, FNRM);
+    printf(WELCOME_CLIENT_MESSAGE, username);
 }
 
 void printLoadingMessage()
@@ -42,7 +42,7 @@ void printLoadingMessage()
     printf(LOADING_MESSAGE FGRN);
 
 #if DEBUG
-    printf(SUCCESS_CHAR "PID = %d\n", getpid());
+    printf(MY_PID_MESSAGE, getpid());
 #endif
 }
 
@@ -98,16 +98,15 @@ void initBoard(int *matrix)
     }
 
 #if DEBUG
-    printf(FGRN SUCCESS_CHAR "Matrice inizializzata.\n" FNRM);
+    printf(MATRIX_INITIALIZED_MESSAGE);
 #endif
 }
 
 void printBoard(int *matrix, char playerOneSymbol, char playerTwoSymbol)
 {
-    char chars[3] = {' ', playerOneSymbol, playerTwoSymbol};
     int cell;
 
-    printf("\n     A   B   C\n\n");
+    printf(MATRIX_TOP_ROW);
     for (int i = 0; i < MATRIX_SIDE_LEN; i++)
     {
         printf(" %d  ", i + 1);
@@ -119,24 +118,24 @@ void printBoard(int *matrix, char playerOneSymbol, char playerTwoSymbol)
             switch (cell)
             {
             case 0:
-                printf("  ");
+                printf(EMPTY_CELL);
                 break;
             case 1:
-                printf(PLAYER_ONE_COLOR BOLD " %c" FNRM NO_BOLD, chars[cell]);
+                printf(PLAYER_ONE_COLOR BOLD " %c" FNRM NO_BOLD, playerOneSymbol);
                 break;
             case 2:
-                printf(PLAYER_TWO_COLOR BOLD " %c" FNRM NO_BOLD, chars[cell]);
+                printf(PLAYER_TWO_COLOR BOLD " %c" FNRM NO_BOLD, playerTwoSymbol);
                 break;
             }
 
             if (j < MATRIX_SIDE_LEN - 1)
             {
-                printf(" |");
+                printf(VERTICAL_SEPARATOR);
             }
         }
         if (i < MATRIX_SIDE_LEN - 1)
         {
-            printf("\n    -----------\n");
+            printf(HORIZONTAL_SEPARATOR);
         }
     }
     printf("\n\n");
@@ -147,7 +146,12 @@ void printSymbol(char symbol, int playerIndex, char *username)
     printf(YOUR_SYMBOL_IS_MESSAGE, username, playerIndex == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR, symbol, FNRM);
 }
 
-void printError(const char *msg, ...)
+void printTimeout(int timeout)
+{
+    printf(timeout == 0 ? INFINITE_TIMEOUT_MESSAGE : TIMEOUT_MESSAGE, timeout);
+}
+
+void printError(const char *msg)
 {
     printAndFlush(FRED ERROR_CHAR);
     printAndFlush(msg);
