@@ -122,10 +122,10 @@ void printBoard(int *matrix, char playerOneSymbol, char playerTwoSymbol)
                 printf("  ");
                 break;
             case 1:
-                printf(PLAYER_ONE_COLOR " %c" FNRM, chars[cell]);
+                printf(PLAYER_ONE_COLOR BOLD " %c" FNRM NO_BOLD, chars[cell]);
                 break;
             case 2:
-                printf(PLAYER_TWO_COLOR " %c" FNRM, chars[cell]);
+                printf(PLAYER_TWO_COLOR BOLD " %c" FNRM NO_BOLD, chars[cell]);
                 break;
             }
 
@@ -142,9 +142,9 @@ void printBoard(int *matrix, char playerOneSymbol, char playerTwoSymbol)
     printf("\n\n");
 }
 
-void printSymbol(char symbol, int playerIndex)
+void printSymbol(char symbol, int playerIndex, char *username)
 {
-    printf(YOUR_SYMBOL_IS_MESSAGE, playerIndex == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR, symbol, FNRM);
+    printf(YOUR_SYMBOL_IS_MESSAGE, username, playerIndex == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR, symbol, FNRM);
 }
 
 void printError(const char *msg, ...)

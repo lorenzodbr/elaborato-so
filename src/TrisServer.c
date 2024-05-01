@@ -280,8 +280,9 @@ void waitForMove()
         errno = 0;
         waitSemaphore(semId, WAIT_FOR_MOVE, 1);
     } while (errno == EINTR);
+
     printf(MOVE_RECEIVED_SERVER_MESSAGE, turn, pids[turn]);
 
     turn = turn == 1 ? 2 : 1;
-    signalSemaphore(semId, turn, 1);
+    signalSemaphore(semId, PLAYER_ONE_TURN + turn - 1, 1);
 }

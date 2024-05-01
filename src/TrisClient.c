@@ -23,6 +23,8 @@ void quitHandler(int sig);
 void checkResults(int sig);
 void serverQuitHandler(int sig);
 void waitForMove();
+void waitForResponse();
+void printMoveScreen();
 
 // Shared memory
 int *matrix;
@@ -60,23 +62,22 @@ int main(int argc, char *argv[])
 
     if (playerIndex != INITIAL_TURN)
     {
-        clearScreenClient();
-        printSymbol(symbols[playerIndex - 1], playerIndex);
-        printBoard(matrix, symbols[0], symbols[1]);
+        printMoveScreen();
         printAndFlush(OPPONENT_TURN_MESSAGE);
     }
 
     do
     {
         waitForMove();
-        clearScreenClient();
-        printSymbol(symbols[playerIndex - 1], playerIndex);
-        printBoard(matrix, symbols[0], symbols[1]);
+
+        // Prints before the move
+        printMoveScreen();
+
         askForInput();
         notifyMove();
-        clearScreenClient();
-        printSymbol(symbols[playerIndex - 1], playerIndex);
-        printBoard(matrix, symbols[0], symbols[1]);
+
+        // Prints after the move
+        printMoveScreen();
         printAndFlush(OPPONENT_TURN_MESSAGE);
     } while (1);
 
@@ -164,7 +165,6 @@ void notifyPlayerReady()
 void notifyMove()
 {
     signalSemaphore(semId, WAIT_FOR_MOVE, 1);
-    signalSemaphore(semId, PLAYER_TWO_TURN - playerIndex + 1, 1);
 }
 
 void waitForOpponent()
@@ -185,9 +185,18 @@ void waitForMove()
     tcflush(STDIN_FILENO, TCIFLUSH);
 }
 
+void waitForResponse()
+{
+    do
+    {
+        errno = 0;
+        waitSemaphore(semId, PLAYER_ONE_TURN + playerIndex - 1, 1);
+    } while (errno == EINTR);
+}
+
 void askForInput()
 {
-    char input[50];
+    char input[INPUT_LEN];
 
     printf(INPUT_A_MOVE_MESSAGE);
     scanf("%s", input);
@@ -205,8 +214,17 @@ void askForInput()
     matrix[move.row + move.col * MATRIX_SIDE_LEN] = playerIndex;
 }
 
+void printMoveScreen()
+{
+    clearScreenClient();
+    printSymbol(symbols[playerIndex - 1], playerIndex, username);
+    printBoard(matrix, symbols[0], symbols[1]);
+}
+
 void checkResults(int sig)
 {
+    printMoveScreen();
+
     if (*result == DRAW)
     {
         printf(DRAW_MESSAGE);
