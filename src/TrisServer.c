@@ -47,6 +47,7 @@ int playersCount = 0;
 // Terminal settings
 struct termios withEcho, withoutEcho;
 bool outputCustomizable = true;
+pthread_t *spinnerTid;
 
 // TODO: handle if IPCs with the same key are already present
 
@@ -169,6 +170,7 @@ void printGameSettings()
 
 void printResult()
 {
+    printAndFlush(FINAL_STATE_MESSAGE);
     printBoard(game->matrix, game->symbols[0], game->symbols[1]);
 
     switch (game->result)
@@ -204,10 +206,11 @@ void initSharedMemory()
 
     game = (tris_game_t *)attachSharedMemory(gameId);
 
-    if (atexit(disposeMemory))
+    spinnerTid = malloc(sizeof(pthread_t));
+
+    if (atexit(disposeMemory) || spinnerTid == NULL)
     {
-        printError(INITIALIZATION_ERROR);
-        exit(EXIT_FAILURE);
+        errExit(INITIALIZATION_ERROR);
     }
 
     initBoard(game->matrix);
@@ -218,6 +221,11 @@ void initSharedMemory()
 void disposeMemory()
 {
     disposeSharedMemory(gameId);
+
+    if (spinnerTid != NULL)
+    {
+        free(spinnerTid);
+    }
 }
 
 void initSemaphores()
@@ -283,41 +291,44 @@ void serverQuit(int sig)
 
 void exitHandler(int sig)
 {
+    stopLoadingSpinner(&spinnerTid);
+
     if (firstCTRLCPressed)
     {
         serverQuit(sig);
     }
 
     firstCTRLCPressed = true;
-    printf(CTRLC_AGAIN_TO_QUIT_MESSAGE);
+    printAndFlush(CTRLC_AGAIN_TO_QUIT_MESSAGE);
 }
 
 void playerQuitHandler(int sig)
 {
     int playerWhoQuitted = sig == SIGUSR1 ? PLAYER_ONE : PLAYER_TWO;
     int playerWhoStayed = playerWhoQuitted == PLAYER_ONE ? PLAYER_TWO : PLAYER_ONE;
-    char *color = playerWhoQuitted == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR;
+    char *playerWhoQuittedColor = playerWhoQuitted == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR;
+    char *playerWhoStayedColor = playerWhoStayed == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR;
 
-    printf(A_PLAYER_QUIT_SERVER_MESSAGE, color, playerWhoQuitted, game->usernames[playerWhoQuitted]);
+    printf(A_PLAYER_QUIT_SERVER_MESSAGE, playerWhoQuittedColor, playerWhoQuitted, game->usernames[playerWhoQuitted]);
+    fflush(stdout);
+
     setPidAt(game->pids, playerWhoQuitted, 0);
     playersCount--;
 
     if (started)
     {
         game->result = QUIT;
-        printf(WINS_PLAYER_MESSAGE, color, playerWhoStayed, game->usernames[playerWhoStayed]);
+        printf(WINS_PLAYER_MESSAGE, playerWhoStayedColor, playerWhoStayed, game->usernames[playerWhoStayed]);
         notifyPlayerWhoWonForQuit(playerWhoStayed);
         exit(EXIT_SUCCESS);
-    }
-    else
-    {
-        printf(NEWLINE);
     }
 }
 
 void waitForPlayers()
 {
     printAndFlush(WAITING_FOR_PLAYERS_MESSAGE);
+
+    startLoadingSpinner(&spinnerTid);
 
     while (playersCount < 2)
     {
@@ -327,6 +338,7 @@ void waitForPlayers()
             waitSemaphore(semId, WAIT_FOR_PLAYERS, 1);
         } while (errno == EINTR);
 
+        stopLoadingSpinner(&spinnerTid);
         printAndFlush(NEWLINE);
 
         if (++playersCount == 1)
@@ -349,7 +361,7 @@ void waitForPlayers()
         fflush(stdout);
     }
 
-    printAndFlush(READY_TO_START);
+    printAndFlush(READY_TO_START_MESSAGE);
 }
 
 void notifyOpponentReady()

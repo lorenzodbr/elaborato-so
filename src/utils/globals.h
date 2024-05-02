@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <termios.h>
+#include <limits.h>
 
 #include "semaphores/semaphores.h"
 
@@ -80,17 +81,76 @@ void *loadingSpinner()
     return NULL;
 }
 
-pthread_t startLoadingSpinner()
+void startLoadingSpinner(pthread_t **tid)
 {
-    pthread_t tid;
-    pthread_create(&tid, NULL, loadingSpinner, NULL);
-    return tid;
+    *tid = malloc(sizeof(pthread_t));
+    pthread_create(*tid, NULL, loadingSpinner, NULL);
 }
 
-void stopLoadingSpinner(pthread_t tid)
+void stopLoadingSpinner(pthread_t **tid)
 {
-    pthread_cancel(tid);
-    printAndFlush("\b \b");
+    if (*tid != NULL)
+    {
+        pthread_cancel(**tid);
+        printAndFlush("\b \b");
+        free(*tid);
+        *tid = NULL;
+    }
+}
+
+int digits(int n)
+{
+    if (n < 0)
+        return digits((n == INT_MIN) ? INT_MAX : -n);
+    if (n < 10)
+        return 1;
+    return 1 + digits(n / 10);
+}
+
+void printSpaces(int n){
+    for (int i = 0; i < n; i++)
+    {
+        printf(" ");
+    }
+
+    fflush(stdout);
+}
+
+void *timeoutPrintHandler(void *timeout)
+{    
+    int timeoutValue = *(int *)timeout;
+    int originalDigits = digits(timeoutValue), newDigits;
+
+    while (timeoutValue > 0)
+    {
+        newDigits = digits(timeoutValue);
+        printf("\x1b[s\r");
+        printSpaces(originalDigits - newDigits);
+        printf("(%d)\x1b[u", timeoutValue--);
+        fflush(stdout);
+
+        sleep(1);
+    }
+
+    return NULL;
+}
+
+void startTimeoutThread(pthread_t *tid, int *timeout)
+{
+    if(*timeout == 0){
+        return;
+    }
+
+    pthread_create(tid, NULL, timeoutPrintHandler, timeout);
+}
+
+void stopTimeoutThread(pthread_t *tid)
+{
+    if(tid == NULL){
+        return;
+    }
+
+    pthread_cancel(*tid);
 }
 
 int setInput(struct termios *policy)
@@ -182,6 +242,7 @@ void printSymbol(char symbol, int playerIndex, char *username)
 
 void printTimeout(int timeout)
 {
+    printf(INFO_CHAR);
     printf(timeout == 0 ? INFINITE_TIMEOUT_MESSAGE : TIMEOUT_MESSAGE, timeout);
 }
 

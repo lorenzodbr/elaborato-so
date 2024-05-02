@@ -30,6 +30,7 @@ void resetTimeout();
 void timeoutHandler(int sig);
 void showInput();
 void initTerminalSettings();
+void disposeTidMemory();
 
 // Shared memory
 
@@ -48,6 +49,7 @@ bool started = false;
 // Terminal settings
 struct termios withEcho, withoutEcho;
 bool outputCustomizable = true;
+pthread_t *spinnerTid = NULL, *timeoutTid = NULL;
 
 int main(int argc, char *argv[])
 {
@@ -83,8 +85,10 @@ int main(int argc, char *argv[])
 
         // Prints before the move
         printMoveScreen();
-
         askForInput();
+
+        stopTimeoutThread(timeoutTid);
+
         notifyMove();
 
         // Prints after the move
@@ -92,6 +96,8 @@ int main(int argc, char *argv[])
         printAndFlush(OPPONENT_TURN_MESSAGE);
 
         setInput(&withoutEcho);
+
+        stopTimeoutThread(timeoutTid);
     } while (1);
 
     return EXIT_SUCCESS;
@@ -133,6 +139,27 @@ void initSharedMemory()
 #if DEBUG
     printf(SERVER_FOUND_SUCCESS, game->pids[SERVER]);
 #endif
+
+    spinnerTid = malloc(sizeof(pthread_t));
+    timeoutTid = malloc(sizeof(pthread_t));
+
+    if (spinnerTid == NULL || timeoutTid == NULL || atexit(disposeTidMemory) != 0)
+    {
+        errExit(INITIALIZATION_ERROR);
+    }
+}
+
+void disposeTidMemory()
+{
+    if (spinnerTid != NULL)
+    {
+        free(spinnerTid);
+    }
+
+    if (timeoutTid != NULL)
+    {
+        free(timeoutTid);
+    }
 }
 
 void initSemaphores()
@@ -196,6 +223,7 @@ void waitForOpponent()
 {
     printAndFlush(game->usernames[playerIndex - 1]);
     printAndFlush(WAITING_FOR_OPPONENT_MESSAGE);
+    startLoadingSpinner(&spinnerTid);
 
     do
     {
@@ -203,6 +231,7 @@ void waitForOpponent()
         waitSemaphore(semId, WAIT_FOR_OPPONENT_READY, 1);
     } while (errno == EINTR);
 
+    stopLoadingSpinner(&spinnerTid);
     printAndFlush(OPPONENT_READY_MESSAGE);
     started = true;
 }
@@ -229,6 +258,7 @@ void waitForResponse()
 
 void timeoutHandler(int sig)
 {
+    printMoveScreen();
     printf(TIMEOUT_LOSS_MESSAGE);
     quitHandler(sig);
     exit(EXIT_FAILURE);
@@ -243,6 +273,8 @@ void initTimeout()
 
     alarm(game->timeout);
     signal(SIGALRM, timeoutHandler);
+
+    startTimeoutThread(timeoutTid, &game->timeout);
 }
 
 void resetTimeout()
@@ -260,10 +292,15 @@ void askForInput()
     char input[MOVE_INPUT_LEN];
 
     showInput(withoutEcho);
+
+    printSpaces((digits(game->timeout) + 2) * (game->timeout != 0));
+    printf(INPUT_A_MOVE_MESSAGE);
+
     initTimeout();
 
-    printf(INPUT_A_MOVE_MESSAGE);
     scanf("%s", input);
+    while (getchar() != '\n') // needed to prevent buffer overflow
+        ;
 
     move_t move;
 
@@ -271,6 +308,7 @@ void askForInput()
     {
         firstCTRLCPressed = false; // reset firstCTRLCPressed if something else is inserted
 
+        printSpaces(digits(game->timeout));
         printError(INVALID_MOVE_ERROR);
         scanf("%s", input);
     }
@@ -314,6 +352,8 @@ void checkResults(int sig)
 
 void exitHandler(int sig)
 {
+    stopLoadingSpinner(&spinnerTid);
+
     if (firstCTRLCPressed)
     {
         kill(game->pids[SERVER], playerIndex == 1 ? SIGUSR1 : SIGUSR2);
@@ -323,7 +363,8 @@ void exitHandler(int sig)
     firstCTRLCPressed = true;
     printf(CTRLC_AGAIN_TO_QUIT_MESSAGE);
 
-    if(started){
+    if (started)
+    {
         printAndFlush(THIS_WAY_YOU_WILL_LOSE_MESSAGE);
     }
 }
