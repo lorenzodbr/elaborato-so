@@ -43,6 +43,7 @@ int semId;
 bool firstCTRLCPressed = false;
 int playerIndex = -1;
 char *username;
+bool started = false;
 
 // Terminal settings
 struct termios withEcho, withoutEcho;
@@ -56,6 +57,15 @@ int main(int argc, char *argv[])
     }
 
     username = argv[1];
+    if (strlen(username) >= USERNAME_MAX_LEN)
+    {
+        errExit(USERNAME_TOO_LONG_ERROR);
+    }
+
+    if (strlen(username) < USERNAME_MIN_LEN)
+    {
+        errExit(USERNAME_TOO_SHORT_ERROR);
+    }
 
     init();
     notifyPlayerReady();
@@ -111,17 +121,13 @@ void initSharedMemory()
 
     game = attachSharedMemory(gameId);
 
-
 #if DEBUG
     printf(SHARED_MEMORY_OBTAINED_SUCCESS, gameId);
 #endif
 
-    playerIndex = setPid(game->pids, getpid());
-
-    if (playerIndex == -1)
+    if ((playerIndex = recordJoin(game, getpid(), username)) < 1)
     {
-        printError(TOO_MANY_PLAYERS_ERROR);
-        exit(EXIT_FAILURE);
+        errExit(TOO_MANY_PLAYERS_ERROR);
     }
 
 #if DEBUG
@@ -163,8 +169,8 @@ void initTerminalSettings()
     {
         setInput(&withoutEcho);
     }
-    
-    if(atexit(showInput))
+
+    if (atexit(showInput))
     {
         printError(INITIALIZATION_ERROR);
         exit(EXIT_FAILURE);
@@ -188,6 +194,7 @@ void notifyMove()
 
 void waitForOpponent()
 {
+    printAndFlush(game->usernames[playerIndex - 1]);
     printAndFlush(WAITING_FOR_OPPONENT_MESSAGE);
 
     do
@@ -197,6 +204,7 @@ void waitForOpponent()
     } while (errno == EINTR);
 
     printAndFlush(OPPONENT_READY_MESSAGE);
+    started = true;
 }
 
 void waitForMove()
@@ -314,6 +322,10 @@ void exitHandler(int sig)
     }
     firstCTRLCPressed = true;
     printf(CTRLC_AGAIN_TO_QUIT_MESSAGE);
+
+    if(started){
+        printAndFlush(THIS_WAY_YOU_WILL_LOSE_MESSAGE);
+    }
 }
 
 void quitHandler(int sig)

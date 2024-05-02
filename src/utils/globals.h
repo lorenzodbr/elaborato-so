@@ -12,10 +12,11 @@ typedef struct
     int col;
 } move_t;
 
-typedef struct {
+typedef struct
+{
     int matrix[MATRIX_SIZE];
     pid_t pids[PID_ARRAY_LEN];
-    char *username[USERNAMES_ARRAY_LEN];
+    char usernames[USERNAMES_ARRAY_LEN][USERNAME_MAX_LEN];
     int result;
     char symbols[SYMBOLS_ARRAY_LEN];
     int timeout;
@@ -24,7 +25,7 @@ typedef struct {
 void printHeaderServer()
 {
     printf(CLEAR_SCREEN);
-    printf(BOLD FCYN TRIS_ASCII_ART_SERVER NO_BOLD FNRM);
+    printf(TRIS_ASCII_ART_SERVER);
 }
 
 void printHeaderClient()
@@ -142,7 +143,7 @@ void printBoard(int *matrix, char playerOneSymbol, char playerTwoSymbol)
     printf(MATRIX_TOP_ROW);
     for (int i = 0; i < MATRIX_SIDE_LEN; i++)
     {
-        printf(" %d  ", i + 1);
+        printf("  %d  ", i + 1);
 
         for (int j = 0; j < MATRIX_SIDE_LEN; j++)
         {
@@ -176,7 +177,7 @@ void printBoard(int *matrix, char playerOneSymbol, char playerTwoSymbol)
 
 void printSymbol(char symbol, int playerIndex, char *username)
 {
-    printf(YOUR_SYMBOL_IS_MESSAGE, username, playerIndex == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR, symbol, FNRM);
+    printf(YOUR_SYMBOL_IS_MESSAGE, username, playerIndex == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR, symbol);
 }
 
 void printTimeout(int timeout)
@@ -216,17 +217,19 @@ void initPids(int *pidsPointer)
 }
 
 // set specified pid to the first empty slot (out of 3)
-int setPid(int *pidsPointer, int pid)
+int recordJoin(tris_game_t *game, int pid, char *username)
 {
     int semId = getSemaphores(N_SEM), playerIndex = -1;
 
     waitSemaphore(semId, PID_LOCK, 1);
     for (int i = 0; i < PID_ARRAY_LEN; i++)
     {
-        if (pidsPointer[i] == 0)
+        if (game->pids[i] == 0)
         {
-            pidsPointer[i] = pid;
+            game->pids[i] = pid;
             playerIndex = i;
+            strcpy(game->usernames[i], username);
+
             break;
         }
     }
@@ -241,6 +244,16 @@ void setPidAt(int *pidsPointer, int index, int pid)
 
     waitSemaphore(semId, PID_LOCK, 1);
     pidsPointer[index] = pid;
+    signalSemaphore(semId, PID_LOCK, 1);
+}
+
+void recordQuit(tris_game_t *game, int index)
+{
+    int semId = getSemaphores(N_SEM);
+
+    waitSemaphore(semId, PID_LOCK, 1);
+    game->pids[index] = 0;
+    free(game->usernames[index]);
     signalSemaphore(semId, PID_LOCK, 1);
 }
 

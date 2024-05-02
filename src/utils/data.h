@@ -19,7 +19,8 @@
 #define FNRM "\x1B[0m"
 #define FRED "\x1B[31m"
 #define FGRN "\x1B[32m"
-#define FYEL "\x1B[33m"
+#define FORNG "\x1B[33m"
+#define FYEL "\033[1;93m"
 #define FBLU "\x1B[34m"
 #define FMAG "\x1B[35m"
 #define FCYN "\x1B[36m"
@@ -46,19 +47,19 @@
                   \\ \\_\\ \\_\\  \\ \\_\\/\\____/ "
 
 #define TRIS_ASCII_ART_BOTTOM "\n                   \\/_/\\/_/   \\/_/\\/___/  v" VERSION "\n                                   \n"
-#define TRIS_ASCII_ART_SERVER TRIS_ASCII_ART_TOP "Server" TRIS_ASCII_ART_BOTTOM
-#define TRIS_ASCII_ART_CLIENT TRIS_ASCII_ART_TOP "Client" TRIS_ASCII_ART_BOTTOM
+#define TRIS_ASCII_ART_SERVER BOLD FCYN TRIS_ASCII_ART_TOP "Server" TRIS_ASCII_ART_BOTTOM NO_BOLD FNRM
+#define TRIS_ASCII_ART_CLIENT BOLD FCYN TRIS_ASCII_ART_TOP "Client" TRIS_ASCII_ART_BOTTOM NO_BOLD FNRM
 #define CREDITS FCYN BOLD "Progetto realizzato da Lorenzo Di Berardino e Filippo Milani\n\n" NO_BOLD FNRM
 
 #define NEWLINE "\n"
-#define ERROR_CHAR " [✗] "
-#define SUCCESS_CHAR " [✔] "
-#define INFO_CHAR " [i] "
-#define WARNING_CHAR " [!] "
+#define ERROR_CHAR BOLD FRED " [✗] " FNRM NO_BOLD
+#define SUCCESS_CHAR BOLD FGRN " [✔] " FNRM NO_BOLD
+#define INFO_CHAR BOLD FCYN " [i] " FNRM NO_BOLD
+#define WARNING_CHAR BOLD FYEL " [!] " FNRM NO_BOLD
 #define EMPTY_CELL "  "
 #define VERTICAL_SEPARATOR " │"
-#define HORIZONTAL_SEPARATOR "\n    ───┼───┼───\n"
-#define MATRIX_TOP_ROW "\n     A   B   C\n\n"
+#define HORIZONTAL_SEPARATOR "\n     ───┼───┼───\n"
+#define MATRIX_TOP_ROW "\n      A   B   C\n\n"
 
 // ------------------ IPCS --------------------
 
@@ -86,11 +87,13 @@
 
 // Sizes
 #define MATRIX_SIDE_LEN 3
-#define MATRIX_SIZE MATRIX_SIDE_LEN * MATRIX_SIDE_LEN
+#define MATRIX_SIZE MATRIX_SIDE_LEN *MATRIX_SIDE_LEN
 #define GAME_SIZE sizeof(tris_game_t)
 #define MOVE_INPUT_LEN 2
 #define PID_ARRAY_LEN 3
-#define USERNAMES_ARRAY_LEN 2
+#define USERNAMES_ARRAY_LEN 3
+#define USERNAME_MAX_LEN 30
+#define USERNAME_MIN_LEN 3
 #define SYMBOLS_ARRAY_LEN 2
 
 // ----------------- GAME --------------------
@@ -115,50 +118,53 @@
 
 // ----------------- MESSAGES ----------------
 
-#define GAME_SETTINGS_MESSAGE INFO_CHAR "Impostazioni:\n"
+#define GAME_SETTINGS_MESSAGE FCYN INFO_CHAR "Impostazioni:\n" FNRM
 #define TIMEOUT_SETTINGS_MESSAGE "     ─ Timeout: %d secondi\n"
 #define INFINITE_TIMEOUT_SETTINGS_MESSAGE "     ─ Timeout: ∞\n"
 #define PLAYER_ONE_SYMBOL_SETTINGS_MESSAGE "     ─ Simbolo " PLAYER_ONE_COLOR "giocatore 1" FNRM ": %c\n"
 #define PLAYER_TWO_SYMBOL_SETTINGS_MESSAGE "     ─ Simbolo " PLAYER_TWO_COLOR "giocatore 2" FNRM ": %c\n"
 #define LOADING_MESSAGE INFO_CHAR "Caricamento in corso...  \n"
-#define WELCOME_CLIENT_MESSAGE FNRM NO_BOLD "\nBenvenuto, " FYEL "%s!" FNRM "\n\n"
+#define WELCOME_CLIENT_MESSAGE FNRM NO_BOLD "\nBenvenuto, " FORNG "%s!" FNRM "\n\n"
 #define WAITING_FOR_PLAYERS_MESSAGE "\n" WARNING_CHAR "In attesa di giocatori... "
-#define SERVER_QUIT_MESSAGE FRED "\n\nIl server ha terminato la partita.\n"
+#define SERVER_QUIT_MESSAGE "\n\n" ERROR_CHAR "Il server ha terminato la partita\n"
 #define MY_PID_MESSAGE SUCCESS_CHAR "PID = %d\n"
-#define CTRLC_AGAIN_TO_QUIT_MESSAGE FYEL "\n\nPremi CTRL+C di nuovo per uscire." FNRM "\n"
-#define WINS_PLAYER_MESSAGE "Vince il giocatore %d (con PID = %d).\n"
-#define WAITING_FOR_MOVE_SERVER_MESSAGE "In attesa della mossa del %sgiocatore %d%s (con PID = %d)... "
-#define MOVE_RECEIVED_SERVER_MESSAGE "\nMossa ricevuta dal %sgiocatore %d%s (con PID = %d).\n"
-#define A_PLAYER_JOINED_SERVER_MESSAGE "\nUn giocatore con PID = %d (%c) è entrato in partita. "
-#define ANOTHER_PLAYER_JOINED_SERVER_MESSAGE "Un altro giocatore con PID = %d (%c) è entrato in partita. \n\n" INFO_CHAR " Pronti per cominciare. "
-#define A_PLAYER_QUIT_SERVER_MESSAGE "\nIl giocatore %d (con PID = %d) ha abbandonato la partita.\n\n"
-#define STARTS_PLAYER_MESSAGE "Inizia il giocatore %d (con PID = %d).\n"
-#define DRAW_MESSAGE FYEL WARNING_CHAR "Pareggio.\n"
-#define CLOSING_MESSAGE FYEL "\nChiusura in corso...\n"
+#define WITH_PID_MESSAGE "(con PID = %d)"
+#define CTRLC_AGAIN_TO_QUIT_MESSAGE "\n\n" WARNING_CHAR "Premi CTRL+C di nuovo per uscire" FNRM
+#define THIS_WAY_YOU_WILL_LOSE_MESSAGE " (in questo modo perderai la partita)"
+#define WINS_PLAYER_MESSAGE INFO_CHAR "Vince il %sgiocatore %d" FNRM " (" FORNG "%s" FNRM ")\n"
+#define WAITING_FOR_MOVE_SERVER_MESSAGE WARNING_CHAR "In attesa della mossa del %sgiocatore %d" FNRM " (" FORNG "%s" FNRM ")... "
+#define MOVE_RECEIVED_SERVER_MESSAGE "\n" INFO_CHAR "Mossa ricevuta dal %sgiocatore %d%s (%s)\n"
+#define A_PLAYER_JOINED_SERVER_MESSAGE "\n" INFO_CHAR "Un giocatore " FORNG "%s" FNRM " è entrato in partita "
+#define ANOTHER_PLAYER_JOINED_SERVER_MESSAGE INFO_CHAR "Un altro giocatore " FORNG "%s" FNRM " è entrato in partita "
+#define READY_TO_START INFO_CHAR "Pronti per cominciare " FNRM
+#define A_PLAYER_QUIT_SERVER_MESSAGE "\n\n" WARNING_CHAR "Il %sgiocatore %d" FNRM " (" FORNG "%s" FNRM ") ha abbandonato la partita\n\n"
+#define STARTS_PLAYER_MESSAGE ". Inizia il %sgiocatore %d" FNRM " (" FORNG "%s" FNRM ")\n"
+#define DRAW_MESSAGE WARNING_CHAR "Pareggio.\n"
+#define CLOSING_MESSAGE "\n" WARNING_CHAR "Chiusura in corso...\n"
 #define YOU_WON_FOR_QUIT_MESSAGE FGRN SUCCESS_CHAR "Hai vinto per abbandono dell'altro giocatore!\n"
-#define YOU_LOST_MESSAGE FRED ERROR_CHAR "Hai perso!\n"
-#define YOU_WON_MESSAGE FGRN SUCCESS_CHAR "Hai vinto!\n"
+#define YOU_LOST_MESSAGE ERROR_CHAR "Hai perso!\n"
+#define YOU_WON_MESSAGE SUCCESS_CHAR "Hai vinto!\n"
 #define INPUT_A_MOVE_MESSAGE "Inserisci la mossa (LetteraNumero): "
 #define WAITING_FOR_OPPONENT_MESSAGE FNRM WARNING_CHAR "In attesa dell'avversario... "
 #define OPPONENT_READY_MESSAGE "Avversario pronto!"
 #define OPPONENT_TURN_MESSAGE "(Turno dell'avversario) "
-#define YOUR_SYMBOL_IS_MESSAGE INFO_CHAR FYEL "%s" FNRM ", il tuo simbolo è " BOLD "%s%c%s\n" NO_BOLD
-#define LOADING_COMPLETE_MESSAGE FNRM SUCCESS_CHAR "Caricamento completato.\n\n"
-#define TIMEOUT_MESSAGE INFO_CHAR "Timeout: %d secondi.\n"
+#define YOUR_SYMBOL_IS_MESSAGE INFO_CHAR FORNG "%s" FNRM ", il tuo simbolo è " BOLD "%s%c" FNRM NO_BOLD "\n"
+#define LOADING_COMPLETE_MESSAGE SUCCESS_CHAR "Caricamento completato!\n\n" FNRM
+#define TIMEOUT_MESSAGE INFO_CHAR "Timeout: %d secondi\n"
 #define INFINITE_TIMEOUT_MESSAGE INFO_CHAR "Timeout: ∞\n"
-#define TIMEOUT_LOSS_MESSAGE FRED "\n\nIl tempo è scaduto. Hai perso per inattività.\n"
-#define MATRIX_INITIALIZED_MESSAGE FGRN SUCCESS_CHAR "Matrice inizializzata.\n" FNRM
+#define TIMEOUT_LOSS_MESSAGE "\n\nIl tempo è scaduto. Hai perso per inattività\n"
+#define MATRIX_INITIALIZED_MESSAGE FGRN SUCCESS_CHAR "Matrice inizializzata\n" FNRM
 
 // Successes
 #define SERVER_FOUND_SUCCESS FGRN SUCCESS_CHAR "Trovato TrisServer con PID = %d\n" FNRM
 
-#define SEMAPHORE_OBTAINED_SUCCESS FGRN SUCCESS_CHAR "Semafori ottenuti.\n" FNRM
-#define SEMAPHORES_INITIALIZED_SUCCESS FGRN SUCCESS_CHAR "Semafori inizializzati.\n" FNRM
-#define SEMAPHORES_DISPOSED_SUCCESS FGRN SUCCESS_CHAR "Semafori deallocati.\n" FNRM
-#define SHARED_MEMORY_OBTAINED_SUCCESS FGRN SUCCESS_CHAR "Memoria condivisa ottenuta (ID: %d).\n" FNRM
-#define SHARED_MEMORY_INITIALIZED_SUCCESS FGRN SUCCESS_CHAR "Memoria condivisa deallocata.\n" FNRM
-#define SHARED_MEMORY_ATTACHED_SUCCESS FGRN SUCCESS_CHAR "Memoria condivisa agganciata (@ %p).\n" FNRM
-#define SHARED_MEMORY_DEALLOCATION_SUCCESS FGRN SUCCESS_CHAR "Memoria condivisa deallocata.\n" FNRM
+#define SEMAPHORE_OBTAINED_SUCCESS FGRN SUCCESS_CHAR "Semafori ottenuti\n" FNRM
+#define SEMAPHORES_INITIALIZED_SUCCESS FGRN SUCCESS_CHAR "Semafori inizializzati\n" FNRM
+#define SEMAPHORES_DISPOSED_SUCCESS FGRN SUCCESS_CHAR "Semafori deallocati\n" FNRM
+#define SHARED_MEMORY_OBTAINED_SUCCESS FGRN SUCCESS_CHAR "Memoria condivisa ottenuta (ID: %d)\n" FNRM
+#define SHARED_MEMORY_INITIALIZED_SUCCESS FGRN SUCCESS_CHAR "Memoria condivisa deallocata\n" FNRM
+#define SHARED_MEMORY_ATTACHED_SUCCESS FGRN SUCCESS_CHAR "Memoria condivisa agganciata (@ %p)\n" FNRM
+#define SHARED_MEMORY_DEALLOCATION_SUCCESS FGRN SUCCESS_CHAR "Memoria condivisa deallocata\n" FNRM
 
 // ----------------- ERRORS ------------------
 
@@ -170,6 +176,8 @@
 #define INVALID_MOVE_ERROR "Mossa non valida. Riprova: "
 #define NO_SERVER_FOUND_ERROR "Nessun server trovato. Esegui TrisServer prima di eseguire TrisClient.\n"
 #define SERVER_ALREADY_RUNNING_ERROR "Il server è già in esecuzione. Esegui un solo server alla volta.\n"
+#define USERNAME_TOO_LONG_ERROR "Il nome utente non può superare i 30 caratteri."
+#define USERNAME_TOO_SHORT_ERROR "Il nome utente deve contenere almeno 3 caratteri."
 
 // Args errors
 #define TIMEOUT_INVALID_CHAR_ERROR "Il valore specificato per il timeout non è valido."

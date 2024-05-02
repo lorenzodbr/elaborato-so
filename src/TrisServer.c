@@ -61,6 +61,9 @@ int main(int argc, char *argv[])
     init();
     parseArgs(argc, argv);
 
+    // Show game settings
+    printGameSettings();
+
     // Waiting for other players
     waitForPlayers();
 
@@ -69,7 +72,7 @@ int main(int argc, char *argv[])
 
     // ...and game can start
     started = true;
-    printf(STARTS_PLAYER_MESSAGE, turn, game->pids[turn]);
+    printf(STARTS_PLAYER_MESSAGE, INITIAL_TURN == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR, turn, game->usernames[turn]);
 
     // Game loop
     while ((game->result = isGameEnded(game->matrix)) == NOT_FINISHED)
@@ -147,7 +150,6 @@ void init()
 
     // Loading complete
     printLoadingCompleteMessage();
-    printGameSettings();
 }
 
 void printGameSettings()
@@ -176,7 +178,8 @@ void printResult()
         break;
     case 1:
     case 2:
-        printf(WINS_PLAYER_MESSAGE, game->result, game->pids[game->result]);
+        printf(WINS_PLAYER_MESSAGE, game->result == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR,
+               game->result, game->usernames[game->result]);
         break;
     }
 }
@@ -293,15 +296,16 @@ void playerQuitHandler(int sig)
 {
     int playerWhoQuitted = sig == SIGUSR1 ? PLAYER_ONE : PLAYER_TWO;
     int playerWhoStayed = playerWhoQuitted == PLAYER_ONE ? PLAYER_TWO : PLAYER_ONE;
+    char *color = playerWhoQuitted == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR;
 
-    printf(A_PLAYER_QUIT_SERVER_MESSAGE, playerWhoQuitted, game->pids[playerWhoQuitted]);
+    printf(A_PLAYER_QUIT_SERVER_MESSAGE, color, playerWhoQuitted, game->usernames[playerWhoQuitted]);
     setPidAt(game->pids, playerWhoQuitted, 0);
     playersCount--;
 
     if (started)
     {
         game->result = QUIT;
-        printf(WINS_PLAYER_MESSAGE, playerWhoStayed, game->pids[playerWhoStayed]);
+        printf(WINS_PLAYER_MESSAGE, color, playerWhoStayed, game->usernames[playerWhoStayed]);
         notifyPlayerWhoWonForQuit(playerWhoStayed);
         exit(EXIT_SUCCESS);
     }
@@ -326,12 +330,26 @@ void waitForPlayers()
         printAndFlush(NEWLINE);
 
         if (++playersCount == 1)
-            printf(A_PLAYER_JOINED_SERVER_MESSAGE, game->pids[PLAYER_ONE], game->symbols[0]);
+        {
+            printf(A_PLAYER_JOINED_SERVER_MESSAGE, game->usernames[PLAYER_ONE]);
+
+#if DEBUG
+            printf(WITH_PID_MESSAGE, game->pids[PLAYER_ONE]);
+#endif
+        }
         else if (playersCount == 2)
-            printf(ANOTHER_PLAYER_JOINED_SERVER_MESSAGE, game->pids[PLAYER_TWO], game->symbols[1]);
+        {
+            printf(ANOTHER_PLAYER_JOINED_SERVER_MESSAGE, game->usernames[PLAYER_TWO]);
+
+#if DEBUG
+            printf(WITH_PID_MESSAGE, game->pids[PLAYER_TWO]);
+#endif
+        }
 
         fflush(stdout);
     }
+
+    printAndFlush(READY_TO_START);
 }
 
 void notifyOpponentReady()
@@ -363,7 +381,7 @@ void waitForMove()
 {
     char *color = turn == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR;
 
-    printf(WAITING_FOR_MOVE_SERVER_MESSAGE, color, turn, FNRM, game->pids[turn]);
+    printf(WAITING_FOR_MOVE_SERVER_MESSAGE, color, turn, game->usernames[turn]);
     fflush(stdout);
 
     do
@@ -377,7 +395,7 @@ void notifyNextMove()
 {
     char *color = turn == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR;
 
-    printf(MOVE_RECEIVED_SERVER_MESSAGE, color, turn, FNRM, game->pids[turn]);
+    printf(MOVE_RECEIVED_SERVER_MESSAGE, color, turn, FNRM, game->usernames[turn]);
 
     turn = turn == 1 ? 2 : 1;
     signalSemaphore(semId, PLAYER_ONE_TURN + turn - 1, 1);
