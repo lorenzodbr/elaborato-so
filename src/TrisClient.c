@@ -30,11 +30,10 @@ void resetTimeout();
 void timeoutHandler(int sig);
 void showInput();
 void initTerminalSettings();
-void disposeTidMemory();
+void disposeMemory();
 void notifyOkToDispose();
 
 // Shared memory
-
 tris_game_t *game;
 int gameId;
 
@@ -154,18 +153,19 @@ void initSharedMemory()
 
     spinnerTid = malloc(sizeof(pthread_t));
 
-    if (spinnerTid == NULL || atexit(disposeTidMemory) != 0)
+    if (spinnerTid == NULL)
     {
+        errExit(INITIALIZATION_ERROR);
+    }
+
+    if(atexit(disposeMemory)){
         errExit(INITIALIZATION_ERROR);
     }
 }
 
-void disposeTidMemory()
-{
-    if (spinnerTid != NULL)
-    {
-        free(spinnerTid);
-    }
+void disposeMemory(){
+    // disposeSharedMemory(gameId);
+    free(spinnerTid);
 }
 
 void initSemaphores()

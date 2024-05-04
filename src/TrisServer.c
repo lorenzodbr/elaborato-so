@@ -241,11 +241,9 @@ void waitOkToDispose()
 
 void disposeMemory()
 {
-    if (gameId != -1)
-        disposeSharedMemory(gameId);
-
-    if (spinnerTid != NULL)
-        free(spinnerTid);
+    disposeSharedMemory(gameId);
+    detachSharedMemory(game);
+    free(spinnerTid);
 }
 
 void initSemaphores()

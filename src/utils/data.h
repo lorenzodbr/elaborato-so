@@ -64,7 +64,7 @@
 // ------------------ IPCS --------------------
 
 // Permissions
-#define PERM 0640
+#define PERM 0600
 
 // Keys
 #define MATRIX_ID 163
