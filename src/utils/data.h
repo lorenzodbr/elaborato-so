@@ -101,7 +101,7 @@
 
 // Settings
 #define INITIAL_TURN PLAYER_ONE
-#define MINIMUM_TIMEOUT 10
+#define MINIMUM_TIMEOUT 5
 
 // Results
 #define NOT_FINISHED -1
@@ -147,7 +147,7 @@
 #define WINS_PLAYER_MESSAGE INFO_CHAR "Vince il %sgiocatore %d" FNRM " (" FORNG "%s" FNRM ")\n"
 #define INPUT_A_MOVE_MESSAGE " Inserisci la mossa (LetteraNumero): "
 #define WAITING_FOR_MOVE_SERVER_MESSAGE WARNING_CHAR "In attesa della mossa del %sgiocatore %d" FNRM " (" FORNG "%s" FNRM ")... "
-#define MOVE_RECEIVED_SERVER_MESSAGE "\n" INFO_CHAR "Mossa ricevuta dal %sgiocatore %d%s (%s)\n"
+#define MOVE_RECEIVED_SERVER_MESSAGE "\n" INFO_CHAR "Mossa ricevuta dal %sgiocatore %d" FNRM " (" FORNG "%s" FNRM ")\n"
 #define A_PLAYER_JOINED_SERVER_MESSAGE "\n" INFO_CHAR "Un giocatore " FORNG "%s" FNRM " è entrato in partita "
 #define ANOTHER_PLAYER_JOINED_SERVER_MESSAGE INFO_CHAR "Un altro giocatore " FORNG "%s" FNRM " è entrato in partita "
 #define STARTS_PLAYER_MESSAGE ". Inizia il %sgiocatore %d" FNRM " (" FORNG "%s" FNRM ")\n"
@@ -184,6 +184,7 @@
 #define USAGE_ERROR_SERVER "Uso: ./TrisServer <timeout> <playerOneSymbol> <playerTwoSymbol>"
 #define USAGE_ERROR_CLIENT "Uso: ./TrisClient <username>"
 #define TOO_MANY_PLAYERS_ERROR "Troppi giocatori connessi. Riprova più tardi.\n"
+#define SAME_USERNAME_ERROR "Il nome utente è già in uso. Riprova con un altro nome.\n"
 #define INITIALIZATION_ERROR "Errore durante l'inizializzazione."
 #define INVALID_MOVE_ERROR "Mossa non valida. Riprova: "
 #define NO_SERVER_FOUND_ERROR "Nessun server trovato. Esegui TrisServer prima di eseguire TrisClient.\n"
@@ -191,9 +192,13 @@
 #define USERNAME_TOO_LONG_ERROR "Il nome utente non può superare i 30 caratteri."
 #define USERNAME_TOO_SHORT_ERROR "Il nome utente deve contenere almeno 3 caratteri."
 
+// Error codes
+#define TOO_MANY_PLAYERS_ERROR_CODE -1
+#define SAME_USERNAME_ERROR_CODE -2
+
 // Args errors
 #define TIMEOUT_INVALID_CHAR_ERROR "Il valore specificato per il timeout non è valido."
-#define TIMEOUT_TOO_LOW_ERROR "Il minimo timeout ammesso è di 10 secondi"
+#define TIMEOUT_TOO_LOW_ERROR "Il minimo timeout ammesso è di 5 secondi"
 #define SYMBOLS_LENGTH_ERROR "I simboli dei giocatori devono essere di un solo carattere."
 #define SYMBOLS_EQUAL_ERROR "I simboli dei giocatori devono essere diversi."
 

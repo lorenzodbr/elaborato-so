@@ -107,7 +107,8 @@ int digits(int n)
     return 1 + digits(n / 10);
 }
 
-void printSpaces(int n){
+void printSpaces(int n)
+{
     for (int i = 0; i < n; i++)
     {
         printf(" ");
@@ -117,7 +118,7 @@ void printSpaces(int n){
 }
 
 void *timeoutPrintHandler(void *timeout)
-{    
+{
     int timeoutValue = *(int *)timeout;
     int originalDigits = digits(timeoutValue), newDigits;
 
@@ -142,7 +143,8 @@ void startTimeoutPrint(pthread_t *tid, int *timeout)
 
 void stopTimeoutPrint(pthread_t tid)
 {
-    if(tid == 0){
+    if (tid == 0)
+    {
         return;
     }
 
@@ -276,13 +278,21 @@ void initPids(int *pidsPointer)
 // set specified pid to the first empty slot (out of 3)
 int recordJoin(tris_game_t *game, int pid, char *username)
 {
-    int semId = getSemaphores(N_SEM), playerIndex = -1;
+    int semId = getSemaphores(N_SEM), playerIndex = TOO_MANY_PLAYERS_ERROR_CODE;
 
     waitSemaphore(semId, PID_LOCK, 1);
-    for (int i = 0; i < PID_ARRAY_LEN; i++)
+    for (int i = 1; i < PID_ARRAY_LEN; i++)
     {
         if (game->pids[i] == 0)
         {
+            int otherPlayerIndex = i == 1 ? 2 : 1;
+
+            if (strcmp(username, game->usernames[otherPlayerIndex]) == 0)
+            {
+                playerIndex = SAME_USERNAME_ERROR_CODE;
+                break;
+            }
+
             game->pids[i] = pid;
             playerIndex = i;
             strcpy(game->usernames[i], username);

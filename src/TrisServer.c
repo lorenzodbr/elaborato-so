@@ -237,7 +237,7 @@ void waitOkToDispose()
     do
     {
         errno = 0;
-        waitSemaphore(semId, OK_TO_DISPOSE, playersCount);
+        waitSemaphore(semId, OK_TO_DISPOSE, started ? 2 : 1);
     } while (errno == EINTR);
 }
 
@@ -337,11 +337,14 @@ void playerQuitHandler(int sig)
     char *playerWhoQuittedColor = playerWhoQuitted == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR;
     char *playerWhoStayedColor = playerWhoStayed == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR;
 
+    if(!started)
+        printf(NEWLINE);
+
     printf(A_PLAYER_QUIT_SERVER_MESSAGE, playerWhoQuittedColor, playerWhoQuitted, game->usernames[playerWhoQuitted]);
     fflush(stdout);
 
     setPidAt(game->pids, playerWhoQuitted, 0);
-    
+
     playersCount--;
 
     if (started)
@@ -420,9 +423,10 @@ void notifyServerQuit()
 
 void waitForMove()
 {
-    char *color = turn == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR;
-
-    printf(WAITING_FOR_MOVE_SERVER_MESSAGE, color, turn, game->usernames[turn]);
+    printf(WAITING_FOR_MOVE_SERVER_MESSAGE,
+           turn == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR,
+           turn,
+           game->usernames[turn]);
     fflush(stdout);
 
     do
@@ -434,9 +438,10 @@ void waitForMove()
 
 void notifyNextMove()
 {
-    char *color = turn == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR;
-
-    printf(MOVE_RECEIVED_SERVER_MESSAGE, color, turn, FNRM, game->usernames[turn]);
+    printf(MOVE_RECEIVED_SERVER_MESSAGE,
+           turn == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR,
+           turn,
+           game->usernames[turn]);
 
     turn = turn == 1 ? 2 : 1;
     signalSemaphore(semId, PLAYER_ONE_TURN + turn - 1, 1);

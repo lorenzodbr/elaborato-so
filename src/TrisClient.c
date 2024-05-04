@@ -46,6 +46,7 @@ bool firstCTRLCPressed = false;
 int playerIndex = -1;
 char *username;
 bool started = false;
+bool admitted = false;
 
 // Terminal settings
 struct termios withEcho, withoutEcho;
@@ -133,10 +134,15 @@ void initSharedMemory()
     printf(SHARED_MEMORY_OBTAINED_SUCCESS, gameId);
 #endif
 
-    if ((playerIndex = recordJoin(game, getpid(), username)) < 1)
+    if ((playerIndex = recordJoin(game, getpid(), username)) == TOO_MANY_PLAYERS_ERROR_CODE)
     {
         errExit(TOO_MANY_PLAYERS_ERROR);
+    } else if (playerIndex == SAME_USERNAME_ERROR_CODE)
+    {
+        errExit(SAME_USERNAME_ERROR);
     }
+
+    admitted = true;
 
 #if DEBUG
     printf(SERVER_FOUND_SUCCESS, game->pids[SERVER]);
@@ -226,6 +232,10 @@ void notifyMove()
 
 void notifyOkToDispose()
 {
+    if(!admitted){
+        return;
+    }
+
     signalSemaphore(semId, OK_TO_DISPOSE, 1);
 }
 
