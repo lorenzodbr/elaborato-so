@@ -120,7 +120,7 @@ void printSpaces(int n)
 void *timeoutPrintHandler(void *timeout)
 {
     int timeoutValue = *(int *)timeout;
-    int originalDigits = digits(timeoutValue), newDigits;
+    int originalDigits = digits(timeoutValue) + (timeoutValue % 10 != 0), newDigits;
 
     while (timeoutValue > 0)
     {

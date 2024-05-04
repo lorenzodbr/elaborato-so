@@ -150,11 +150,10 @@ void init()
     initSharedMemory();
 
     // Dispose memory and semaphores at exit only if clients have already quitted
-    if (atexit(waitOkToDispose))
-    {
-        printError(INITIALIZATION_ERROR);
-        exit(EXIT_FAILURE);
-    }
+    // if (atexit(waitOkToDispose))
+    // {
+    //     errExit(INITIALIZATION_ERROR);
+    // }
 
     initSignals();
 
@@ -229,15 +228,14 @@ void initSharedMemory()
 
 void waitOkToDispose()
 {
-    if (playersCount == 0)
-    {
+    if(!started && playersCount == 0){
         return;
     }
 
     do
     {
         errno = 0;
-        waitSemaphore(semId, OK_TO_DISPOSE, started ? 2 : 1);
+        waitSemaphore(semId, OK_TO_DISPOSE, started ? 2 : playersCount);
     } while (errno == EINTR);
 }
 
@@ -337,11 +335,12 @@ void playerQuitHandler(int sig)
     char *playerWhoQuittedColor = playerWhoQuitted == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR;
     char *playerWhoStayedColor = playerWhoStayed == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR;
 
-    if(!started)
-        printf(NEWLINE);
-
     printf(A_PLAYER_QUIT_SERVER_MESSAGE, playerWhoQuittedColor, playerWhoQuitted, game->usernames[playerWhoQuitted]);
     fflush(stdout);
+
+#if DEBUG
+    printf(WITH_PID_MESSAGE "\n", game->pids[playerWhoQuitted]);
+#endif
 
     setPidAt(game->pids, playerWhoQuitted, 0);
 

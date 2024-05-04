@@ -207,7 +207,7 @@
 #define SEMAPHORE_INITIALIZATION_ERROR "Errore durante l'inizializzazione dei semafori."
 #define SEMAPHORE_DEALLOCATION_ERROR "Errore durante la deallocazione dei semafori."
 #define SEMAPHORE_WAITING_ERROR "Errore durante l'attesa del semaforo."
-#define SEMAPHORE_SIGNALING_ERROR "Errore durante il rilascio del semaforo."
+#define SEMAPHORE_SIGNALING_ERROR "Errore durante la segnalazione del semaforo."
 #define SEMAPHORE_GETTING_ERROR "Errore durante l'ottenimento di dati sul semaforo."
 
 // Shared memory errors

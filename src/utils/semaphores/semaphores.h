@@ -27,7 +27,11 @@ int getSemaphores(int nsems)
     int semId = semget(SEM_ID, nsems, IPC_CREAT | PERM);
     if (semId < 0)
     {
+#if DEBUG
         errExit(SEMAPHORE_INITIALIZATION_ERROR);
+#else
+        exit(EXIT_FAILURE);
+#endif
     }
 
 #if DEBUG
@@ -41,7 +45,11 @@ void setSemaphore(int semid, int semnum, int value)
 {
     if (semctl(semid, semnum, SETVAL, value) < 0)
     {
+#if DEBUG
         errExit(SEMAPHORE_INITIALIZATION_ERROR);
+#else
+        exit(EXIT_FAILURE);
+#endif
     }
 
 #if DEBUG
@@ -56,7 +64,11 @@ void setSemaphores(int semid, int nsems, short unsigned *values)
 
     if (semctl(semid, 0, SETALL, arg) < 0)
     {
+#if DEBUG
         errExit(SEMAPHORE_INITIALIZATION_ERROR);
+#else
+        exit(EXIT_FAILURE);
+#endif
     }
 
 #if DEBUG
@@ -68,7 +80,11 @@ void disposeSemaphore(int semid)
 {
     if (semctl(semid, 0, IPC_RMID) < 0)
     {
+#if DEBUG
         errExit(SEMAPHORE_DEALLOCATION_ERROR);
+#else
+        exit(EXIT_FAILURE);
+#endif
     }
 
 #if DEBUG
@@ -86,7 +102,11 @@ void waitSemaphore(int semid, int semnum, int value)
     int semopRet = semop(semid, &sops, 1);
     if (semopRet < 0 && errno != EINTR)
     {
+#if DEBUG
         errExit(SEMAPHORE_WAITING_ERROR);
+#else
+        exit(EXIT_FAILURE);
+#endif
     }
 }
 
@@ -97,6 +117,10 @@ void signalSemaphore(int semid, int semnum, int value)
     int semopRet = semop(semid, &sops, 1);
     if (semopRet < 0 && errno != EINTR)
     {
+#if DEBUG
         errExit(SEMAPHORE_SIGNALING_ERROR);
+#else
+        exit(EXIT_FAILURE);
+#endif
     }
 }

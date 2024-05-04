@@ -46,7 +46,7 @@ bool firstCTRLCPressed = false;
 int playerIndex = -1;
 char *username;
 bool started = false;
-bool admitted = false;
+bool selfQuit = false;
 
 // Terminal settings
 struct termios withEcho, withoutEcho;
@@ -137,12 +137,16 @@ void initSharedMemory()
     if ((playerIndex = recordJoin(game, getpid(), username)) == TOO_MANY_PLAYERS_ERROR_CODE)
     {
         errExit(TOO_MANY_PLAYERS_ERROR);
-    } else if (playerIndex == SAME_USERNAME_ERROR_CODE)
+    }
+    else if (playerIndex == SAME_USERNAME_ERROR_CODE)
     {
         errExit(SAME_USERNAME_ERROR);
     }
 
-    admitted = true;
+    // if (atexit(notifyOkToDispose) != 0)
+    // {
+    //     errExit(INITIALIZATION_ERROR);
+    // }
 
 #if DEBUG
     printf(SERVER_FOUND_SUCCESS, game->pids[SERVER]);
@@ -167,11 +171,6 @@ void disposeTidMemory()
 void initSemaphores()
 {
     semId = getSemaphores(N_SEM);
-
-    if (atexit(notifyOkToDispose) != 0)
-    {
-        errExit(INITIALIZATION_ERROR);
-    }
 }
 
 void initSignals()
@@ -232,7 +231,8 @@ void notifyMove()
 
 void notifyOkToDispose()
 {
-    if(!admitted){
+    if (!started && selfQuit)
+    {
         return;
     }
 
@@ -313,7 +313,7 @@ void askForInput()
 
     showInput(withoutEcho);
 
-    printSpaces((digits(game->timeout) + 2) * (game->timeout != 0));
+    printSpaces((digits(game->timeout) + 3) * (game->timeout != 0));
     printf(INPUT_A_MOVE_MESSAGE);
 
     initTimeout();
@@ -328,7 +328,7 @@ void askForInput()
     {
         firstCTRLCPressed = false; // reset firstCTRLCPressed if something else is inserted
 
-        printSpaces((digits(game->timeout) + 2) * (game->timeout != 0));
+        printSpaces((digits(game->timeout) + 3) * (game->timeout != 0));
         printError(INVALID_MOVE_ERROR);
         scanf("%s", input);
     }
@@ -377,6 +377,8 @@ void exitHandler(int sig)
     if (firstCTRLCPressed)
     {
         kill(game->pids[SERVER], playerIndex == 1 ? SIGUSR1 : SIGUSR2);
+        selfQuit = true;
+
         printf(CLOSING_MESSAGE);
         exit(EXIT_SUCCESS);
     }
@@ -385,8 +387,10 @@ void exitHandler(int sig)
 
     if (started)
     {
-        printAndFlush(THIS_WAY_YOU_WILL_LOSE_MESSAGE);
+        printf(THIS_WAY_YOU_WILL_LOSE_MESSAGE);
     }
+
+    fflush(stdout);
 }
 
 void quitHandler(int sig)
