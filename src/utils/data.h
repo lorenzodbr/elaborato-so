@@ -215,6 +215,7 @@
 #define SHARED_MEMORY_ATTACH_ERROR "Errore durante l'aggancio della memoria condivisa."
 #define SHARED_MEMORY_DEALLOCATION_ERROR "Errore durante la deallocazione della memoria condivisa."
 #define SHARED_MEMORY_STATUS_ERROR "Errore durante l'ottenimento di dati sulla memoria condivisa."
+#define SHARED_MEMORY_DETACH_ERROR "Errore durante l'ottenimento dell'indirizzo della memoria condivisa."
 
 // Fork errors
 #define FORK_ERROR "Errore durante la creazione di un processo figlio."

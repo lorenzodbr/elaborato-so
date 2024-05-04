@@ -51,6 +51,14 @@ void *attachSharedMemory(int shmid)
     return addr;
 }
 
+void detachSharedMemory(void *addr)
+{
+    if (shmdt(addr) < 0)
+    {
+        errExit(SHARED_MEMORY_DETACH_ERROR);
+    }
+}
+
 bool areThereAttachedProcesses()
 {
     // check if there are attached processes by checking

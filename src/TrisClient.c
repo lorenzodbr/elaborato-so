@@ -164,7 +164,7 @@ void initSharedMemory()
 }
 
 void disposeMemory(){
-    // disposeSharedMemory(gameId);
+    // detachSharedMemory(gameId);
     free(spinnerTid);
 }
 

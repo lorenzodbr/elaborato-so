@@ -100,7 +100,7 @@ void waitSemaphore(int semid, int semnum, int value)
     struct sembuf sops = {semnum, value, 0};
 
     int semopRet = semop(semid, &sops, 1);
-    if (semopRet < 0 && errno != EINTR)
+    if (semopRet < 0 && (errno != EINTR || errno != EIDRM))
     {
 #if DEBUG
         errExit(SEMAPHORE_WAITING_ERROR);
@@ -115,7 +115,7 @@ void signalSemaphore(int semid, int semnum, int value)
     struct sembuf sops = {semnum, value, 0};
 
     int semopRet = semop(semid, &sops, 1);
-    if (semopRet < 0 && errno != EINTR)
+    if (semopRet < 0 && (errno != EINTR || errno != EIDRM))
     {
 #if DEBUG
         errExit(SEMAPHORE_SIGNALING_ERROR);
