@@ -135,22 +135,18 @@ void *timeoutPrintHandler(void *timeout)
     return NULL;
 }
 
-void startTimeoutThread(pthread_t *tid, int *timeout)
+void startTimeoutPrint(pthread_t *tid, int *timeout)
 {
-    if(*timeout == 0){
-        return;
-    }
-
     pthread_create(tid, NULL, timeoutPrintHandler, timeout);
 }
 
-void stopTimeoutThread(pthread_t *tid)
+void stopTimeoutPrint(pthread_t tid)
 {
-    if(tid == NULL){
+    if(tid == 0){
         return;
     }
 
-    pthread_cancel(*tid);
+    pthread_cancel(tid);
 }
 
 int setInput(struct termios *policy)

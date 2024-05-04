@@ -31,6 +31,7 @@ void timeoutHandler(int sig);
 void showInput();
 void initTerminalSettings();
 void disposeTidMemory();
+void notifyOkToDispose();
 
 // Shared memory
 
@@ -49,7 +50,8 @@ bool started = false;
 // Terminal settings
 struct termios withEcho, withoutEcho;
 bool outputCustomizable = true;
-pthread_t *spinnerTid = NULL, *timeoutTid = NULL;
+pthread_t *spinnerTid = NULL;
+pthread_t timeoutTid = 0;
 
 int main(int argc, char *argv[])
 {
@@ -87,7 +89,7 @@ int main(int argc, char *argv[])
         printMoveScreen();
         askForInput();
 
-        stopTimeoutThread(timeoutTid);
+        stopTimeoutPrint(timeoutTid);
 
         notifyMove();
 
@@ -97,7 +99,7 @@ int main(int argc, char *argv[])
 
         setInput(&withoutEcho);
 
-        stopTimeoutThread(timeoutTid);
+        stopTimeoutPrint(timeoutTid);
     } while (1);
 
     return EXIT_SUCCESS;
@@ -141,9 +143,8 @@ void initSharedMemory()
 #endif
 
     spinnerTid = malloc(sizeof(pthread_t));
-    timeoutTid = malloc(sizeof(pthread_t));
 
-    if (spinnerTid == NULL || timeoutTid == NULL || atexit(disposeTidMemory) != 0)
+    if (spinnerTid == NULL || atexit(disposeTidMemory) != 0)
     {
         errExit(INITIALIZATION_ERROR);
     }
@@ -155,16 +156,16 @@ void disposeTidMemory()
     {
         free(spinnerTid);
     }
-
-    if (timeoutTid != NULL)
-    {
-        free(timeoutTid);
-    }
 }
 
 void initSemaphores()
 {
     semId = getSemaphores(N_SEM);
+
+    if (atexit(notifyOkToDispose) != 0)
+    {
+        errExit(INITIALIZATION_ERROR);
+    }
 }
 
 void initSignals()
@@ -207,6 +208,10 @@ void initTerminalSettings()
 void showInput()
 {
     setInput(&withEcho);
+
+#if DEBUG
+    printf(OUTPUT_RESTORED_SUCCESS);
+#endif
 }
 
 void notifyPlayerReady()
@@ -217,6 +222,11 @@ void notifyPlayerReady()
 void notifyMove()
 {
     signalSemaphore(semId, WAIT_FOR_MOVE, 1);
+}
+
+void notifyOkToDispose()
+{
+    signalSemaphore(semId, OK_TO_DISPOSE, 1);
 }
 
 void waitForOpponent()
@@ -274,7 +284,7 @@ void initTimeout()
     alarm(game->timeout);
     signal(SIGALRM, timeoutHandler);
 
-    startTimeoutThread(timeoutTid, &game->timeout);
+    startTimeoutPrint(&timeoutTid, &game->timeout);
 }
 
 void resetTimeout()
@@ -308,7 +318,7 @@ void askForInput()
     {
         firstCTRLCPressed = false; // reset firstCTRLCPressed if something else is inserted
 
-        printSpaces(digits(game->timeout));
+        printSpaces((digits(game->timeout) + 2) * (game->timeout != 0));
         printError(INVALID_MOVE_ERROR);
         scanf("%s", input);
     }

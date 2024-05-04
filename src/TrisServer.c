@@ -30,13 +30,14 @@ void printGameSettings();
 void serverQuit(int sig);
 void showInput();
 void printResult();
+void waitOkToDispose();
 
 // Shared memory
-tris_game_t *game;
-int gameId;
+tris_game_t *game = NULL;
+int gameId = -1;
 
 // Semaphores
-int semId;
+int semId = -1;
 
 // State variables
 bool firstCTRLCPressed = false;
@@ -47,7 +48,7 @@ int playersCount = 0;
 // Terminal settings
 struct termios withEcho, withoutEcho;
 bool outputCustomizable = true;
-pthread_t *spinnerTid;
+pthread_t *spinnerTid = NULL;
 
 // TODO: handle if IPCs with the same key are already present
 
@@ -147,6 +148,14 @@ void init()
     // Data structures
     initSemaphores();
     initSharedMemory();
+
+    // Dispose memory and semaphores at exit only if clients have already quitted
+    if (atexit(waitOkToDispose))
+    {
+        printError(INITIALIZATION_ERROR);
+        exit(EXIT_FAILURE);
+    }
+
     initSignals();
 
     // Loading complete
@@ -218,14 +227,27 @@ void initSharedMemory()
     setPidAt(game->pids, 0, getpid());
 }
 
+void waitOkToDispose()
+{
+    if (playersCount == 0)
+    {
+        return;
+    }
+
+    do
+    {
+        errno = 0;
+        waitSemaphore(semId, OK_TO_DISPOSE, playersCount);
+    } while (errno == EINTR);
+}
+
 void disposeMemory()
 {
-    disposeSharedMemory(gameId);
+    if (gameId != -1)
+        disposeSharedMemory(gameId);
 
     if (spinnerTid != NULL)
-    {
         free(spinnerTid);
-    }
 }
 
 void initSemaphores()
@@ -239,6 +261,7 @@ void initSemaphores()
     values[PLAYER_ONE_TURN] = INITIAL_TURN == PLAYER_ONE ? 1 : 0;
     values[PLAYER_TWO_TURN] = INITIAL_TURN == PLAYER_TWO ? 1 : 0;
     values[WAIT_FOR_MOVE] = 0;
+    values[OK_TO_DISPOSE] = 0;
 
     setSemaphores(semId, N_SEM, values);
 
@@ -251,13 +274,18 @@ void initSemaphores()
 
 void disposeSemaphores()
 {
-    disposeSemaphore(semId);
+    if (semId != -1)
+        disposeSemaphore(semId);
 }
 
 void showInput()
 {
     setInput(&withEcho);
     ignorePreviousInput();
+
+#if DEBUG
+    printf(OUTPUT_RESTORED_SUCCESS);
+#endif
 }
 
 void initSignals()
@@ -313,12 +341,13 @@ void playerQuitHandler(int sig)
     fflush(stdout);
 
     setPidAt(game->pids, playerWhoQuitted, 0);
+    
     playersCount--;
 
     if (started)
     {
         game->result = QUIT;
-        printf(WINS_PLAYER_MESSAGE, playerWhoStayedColor, playerWhoStayed, game->usernames[playerWhoStayed]);
+        printf("\n" WINS_PLAYER_MESSAGE, playerWhoStayedColor, playerWhoStayed, game->usernames[playerWhoStayed]);
         notifyPlayerWhoWonForQuit(playerWhoStayed);
         exit(EXIT_SUCCESS);
     }

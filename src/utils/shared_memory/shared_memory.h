@@ -32,7 +32,7 @@ void disposeSharedMemory(int shmid)
     }
 
 #if DEBUG
-    printf(SHARED_MEMORY_DEALLOCATION_SUCCESS);
+    printf("\n" SHARED_MEMORY_DEALLOCATION_SUCCESS);
 #endif
 }
 

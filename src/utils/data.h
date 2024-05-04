@@ -38,7 +38,7 @@
 
 // ------------- APPLICATION STRINGS --------------
 
-#define VERSION "1.0"
+#define VERSION "1.1"
 #define TRIS_ASCII_ART_TOP "              ______                     \n\
              /\\__  _\\       __           \n\
              \\/_/\\ \\/ _  __/\\_\\    ____  \n\
@@ -77,13 +77,14 @@
 #define FTOK_PATH ".config"
 
 // Semaphore indexes
-#define N_SEM 6
+#define N_SEM 7
 #define WAIT_FOR_PLAYERS 0
 #define WAIT_FOR_OPPONENT_READY 1
 #define PID_LOCK 2
 #define PLAYER_ONE_TURN 3
 #define PLAYER_TWO_TURN 4
 #define WAIT_FOR_MOVE 5
+#define OK_TO_DISPOSE 6
 
 // Sizes
 #define MATRIX_SIDE_LEN 3
@@ -143,7 +144,7 @@
 #define WAITING_FOR_PLAYERS_MESSAGE "\n" WARNING_CHAR "In attesa di giocatori...  "
 #define WAITING_FOR_OPPONENT_MESSAGE FNRM WARNING_CHAR "In attesa dell'avversario...  "
 #define SERVER_QUIT_MESSAGE "\n\n" ERROR_CHAR "Il server ha terminato la partita\n"
-#define WINS_PLAYER_MESSAGE "\n" INFO_CHAR "Vince il %sgiocatore %d" FNRM " (" FORNG "%s" FNRM ")\n"
+#define WINS_PLAYER_MESSAGE INFO_CHAR "Vince il %sgiocatore %d" FNRM " (" FORNG "%s" FNRM ")\n"
 #define INPUT_A_MOVE_MESSAGE " Inserisci la mossa (LetteraNumero): "
 #define WAITING_FOR_MOVE_SERVER_MESSAGE WARNING_CHAR "In attesa della mossa del %sgiocatore %d" FNRM " (" FORNG "%s" FNRM ")... "
 #define MOVE_RECEIVED_SERVER_MESSAGE "\n" INFO_CHAR "Mossa ricevuta dal %sgiocatore %d%s (%s)\n"
@@ -171,9 +172,11 @@
 // Shared memory success messages
 #define MATRIX_INITIALIZED_MESSAGE FGRN SUCCESS_CHAR "Matrice inizializzata\n" FNRM
 #define SHARED_MEMORY_OBTAINED_SUCCESS FGRN SUCCESS_CHAR "Memoria condivisa ottenuta (ID: %d)\n" FNRM
-#define SHARED_MEMORY_INITIALIZED_SUCCESS FGRN SUCCESS_CHAR "Memoria condivisa deallocata\n" FNRM
 #define SHARED_MEMORY_ATTACHED_SUCCESS FGRN SUCCESS_CHAR "Memoria condivisa agganciata (@ %p)\n" FNRM
 #define SHARED_MEMORY_DEALLOCATION_SUCCESS FGRN SUCCESS_CHAR "Memoria condivisa deallocata\n" FNRM
+
+// Output messages
+#define OUTPUT_RESTORED_SUCCESS FGRN SUCCESS_CHAR "Output ripristinato\n" FNRM
 
 // ----------------- ERRORS ------------------
 
