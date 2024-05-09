@@ -122,7 +122,7 @@ int main(int argc, char* argv[]) {
             chooseRandomOrBestMove(game->matrix, playerIndex, cycles);
         }
         else {
-            chooseNextBestMove(game->matrix, playerIndex);
+            chooseBestMove(game->matrix, playerIndex);
         }
 
         stopTimeoutPrint(timeoutTid);

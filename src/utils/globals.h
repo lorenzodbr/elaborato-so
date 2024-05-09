@@ -369,7 +369,7 @@ int min(int a, int b) {
 int minimax(int* gameMatrix, int depth, bool isMaximizing) {
     int result = isGameEnded(gameMatrix);
 
-    if(result == DRAW) return DRAW;
+    if (result == DRAW) return DRAW;
 
     if (result != NOT_FINISHED) {
         return result == PLAYER_TWO ? 1 : -1;
@@ -387,7 +387,8 @@ int minimax(int* gameMatrix, int depth, bool isMaximizing) {
         }
 
         return bestVal;
-    } else {
+    }
+    else {
         int bestVal = INT_MAX;
 
         for (int i = 0; i < MATRIX_SIZE; i++) {
@@ -403,7 +404,7 @@ int minimax(int* gameMatrix, int depth, bool isMaximizing) {
 }
 
 //uses minimax to choose the next best move
-void chooseNextBestMove(int* gameMatrix, int playerIndex) {
+void chooseBestMove(int* gameMatrix, int playerIndex) {
     int bestVal = INT_MIN;
     move_t bestMove;
 
@@ -436,8 +437,9 @@ void chooseRandomMove(int* gameMatrix, int playerIndex) {
 
 
 void chooseRandomOrBestMove(int* gameMatrix, int playerIndex, int cycles) {
-    if(cycles % 2 == 0)
-        chooseRandomMove(gameMatrix, playerIndex);
+    if (cycles % 2 == 0)
+        chooseBestMove(gameMatrix, playerIndex);
     else
-        chooseNextBestMove(gameMatrix, playerIndex);
+        chooseRandomMove(gameMatrix, playerIndex);
+
 }

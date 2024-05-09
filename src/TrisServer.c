@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include <signal.h>
 #include <errno.h>
+#include <time.h>
 
 #include "utils/data.h"
 #include "utils/globals.h"
@@ -320,8 +321,6 @@ void waitForPlayers() {
     while (playersCount < 2) {
         if (game->autoplay != NONE && playersCount == 1) {
             if ((forkRet = fork()) == 0) {
-                srand(getpid());
-
                 close(STDOUT_FILENO);
                 execl("./bin/TrisClient", "./TrisClient", "AI", NULL);
                 errExit(EXEC_ERROR);
