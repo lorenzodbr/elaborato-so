@@ -1,3 +1,9 @@
+/************************************
+* VR487434 - Lorenzo Di Berardino
+* VR486588 - Filippo Milani
+* 09/05/2024
+*************************************/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -53,6 +59,7 @@ struct termios withEcho, withoutEcho;
 bool outputCustomizable = true;
 pthread_t* spinnerTid = NULL;
 pthread_t timeoutTid = 0;
+
 
 int main(int argc, char* argv[]) {
     if (argc != N_ARGS_CLIENT + 1 && argc != N_ARGS_CLIENT) {
