@@ -119,7 +119,7 @@ int main(int argc, char* argv[]) {
             chooseRandomMove(game->matrix, playerIndex);
         }
         else  if (autoPlay == MEDIUM) {
-            chooseAlmostNextBestMove(game->matrix, playerIndex, cycles);
+            chooseRandomOrBestMove(game->matrix, playerIndex, cycles);
         }
         else {
             chooseNextBestMove(game->matrix, playerIndex);

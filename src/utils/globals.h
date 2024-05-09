@@ -435,7 +435,7 @@ void chooseRandomMove(int* gameMatrix, int playerIndex) {
 }
 
 
-void chooseAlmostNextBestMove(int* gameMatrix, int playerIndex, int cycles) {
+void chooseRandomOrBestMove(int* gameMatrix, int playerIndex, int cycles) {
     if(cycles % 2 == 0)
         chooseRandomMove(gameMatrix, playerIndex);
     else
