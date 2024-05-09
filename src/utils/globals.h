@@ -399,6 +399,7 @@ int minimax(int* gameMatrix, int depth, bool isMaximizing) {
     }
 }
 
+//uses minimax to choose the next best move
 void chooseNextBestMove(int* gameMatrix, int playerIndex) {
     int bestVal = INT_MIN;
     move_t bestMove;
