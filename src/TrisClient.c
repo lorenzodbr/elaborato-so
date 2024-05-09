@@ -94,14 +94,14 @@ int main(int argc, char* argv[]) {
         // Prints before the move
         printMoveScreen();
 
-        // if (activePlayer) {
+        if (!autoPlay || activePlayer) {
             askForInput();
-            stopTimeoutPrint(timeoutTid);
-        // }
-        // else {
-        //     chooseNextBestMove(game->matrix, playerIndex);
-        //     printf("choosing next best move\n");
-        // }
+        }
+        else {
+            chooseNextBestMove(game->matrix, playerIndex);
+        }
+
+        stopTimeoutPrint(timeoutTid);
 
         notifyMove();
 
@@ -339,7 +339,8 @@ void checkResults(int sig) {
 }
 
 void exitHandler(int sig) {
-    stopLoadingSpinner(&spinnerTid);
+    if(!started)
+        stopLoadingSpinner(&spinnerTid);
 
     if (firstCTRLCPressed) {
         kill(game->pids[SERVER], playerIndex == 1 ? SIGUSR1 : SIGUSR2);
@@ -348,6 +349,7 @@ void exitHandler(int sig) {
         printf(CLOSING_MESSAGE);
         exit(EXIT_SUCCESS);
     }
+
     firstCTRLCPressed = true;
     printf(CTRLC_AGAIN_TO_QUIT_MESSAGE);
 

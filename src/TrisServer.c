@@ -317,7 +317,7 @@ void waitForPlayers() {
     while (playersCount < 2) {
         if (game->autoplay && playersCount == 1) {
             if ((forkRet = fork()) == 0) {
-                //close(STDOUT_FILENO);
+                close(STDOUT_FILENO);
                 execl("/home/lorenzo/Scrivania/SO/Progetto/bin/TrisClient", "./TrisClient", "AI", NULL);
                 errExit(EXEC_ERROR);
             }
@@ -325,6 +325,7 @@ void waitForPlayers() {
                 errExit(FORK_ERROR);
             }
             else {
+                printf(AUTOPLAY_ENABLED_MESSAGE);
                 break;
             }
         }

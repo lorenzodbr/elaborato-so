@@ -159,6 +159,7 @@
 #define OPPONENT_TURN_MESSAGE " (Turno dell'avversario) "
 #define YOUR_SYMBOL_IS_MESSAGE INFO_CHAR FORNG "%s" FNRM ", il tuo simbolo è " BOLD "%s%c" FNRM NO_BOLD "\n"
 #define TIMEOUT_LOSS_MESSAGE ERROR_CHAR "Il tempo è scaduto. Hai perso per inattività\n"
+#define AUTOPLAY_ENABLED_MESSAGE "\n" INFO_CHAR "Modalità automatica attivata\n"
 
 // General success messages
 #define SERVER_FOUND_SUCCESS FGRN SUCCESS_CHAR "Trovato TrisServer con PID = %d\n" FNRM

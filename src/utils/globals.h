@@ -248,7 +248,9 @@ int recordJoin(tris_game_t* game, int pid, char* username, bool autoPlay) {
                 break;
             }
 
-            game->autoplay = autoPlay;
+            if (autoPlay) {
+                game->autoplay = true;
+            }
 
             game->pids[i] = pid;
             playerIndex = i;
@@ -362,45 +364,58 @@ int min(int a, int b) {
 }
 
 int minimax(int* gameMatrix, int depth, bool isMaximizing) {
-    int bestScore;
+    int result = isGameEnded(gameMatrix);
+
+    if(result == DRAW) return DRAW;
+
+    if (result != NOT_FINISHED) {
+        return result == PLAYER_TWO ? 1 : -1;
+    }
+
     if (isMaximizing) {
-        bestScore = INT_MIN;
+        int bestVal = INT_MIN;
+
         for (int i = 0; i < MATRIX_SIZE; i++) {
             if (gameMatrix[i] == 0) {
                 gameMatrix[i] = PLAYER_TWO;
-                bestScore = max(bestScore, minimax(gameMatrix, depth + 1, false));
+                bestVal = max(bestVal, minimax(gameMatrix, depth + 1, false));
                 gameMatrix[i] = 0;
             }
         }
-    }
-    else {
-        bestScore = INT_MAX;
+
+        return bestVal;
+    } else {
+        int bestVal = INT_MAX;
+
         for (int i = 0; i < MATRIX_SIZE; i++) {
             if (gameMatrix[i] == 0) {
                 gameMatrix[i] = PLAYER_ONE;
-                bestScore = min(bestScore, minimax(gameMatrix, depth + 1, true));
+                bestVal = min(bestVal, minimax(gameMatrix, depth + 1, true));
                 gameMatrix[i] = 0;
             }
         }
+
+        return bestVal;
     }
-    return bestScore;
 }
 
-// Uses minimax algorithm
 void chooseNextBestMove(int* gameMatrix, int playerIndex) {
-    int bestScore = INT_MIN;
-    int bestMove = -1;
-    int score;
+    int bestVal = INT_MIN;
+    move_t bestMove;
+
     for (int i = 0; i < MATRIX_SIZE; i++) {
-        if (gameMatrix == 0) {
+        if (gameMatrix[i] == 0) {
             gameMatrix[i] = playerIndex;
-            score = minimax(gameMatrix, 0, false);
+            int moveVal = minimax(gameMatrix, 0, false);
             gameMatrix[i] = 0;
-            if (score > bestScore) {
-                bestScore = score;
-                bestMove = i;
+
+            if (moveVal > bestVal) {
+                bestMove.row = i % MATRIX_SIDE_LEN;
+                bestMove.col = i / MATRIX_SIDE_LEN;
+                bestVal = moveVal;
             }
         }
     }
-    gameMatrix[bestMove] = playerIndex;
+
+    gameMatrix[bestMove.row + bestMove.col * MATRIX_SIDE_LEN] = playerIndex;
 }
