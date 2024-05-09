@@ -53,13 +53,13 @@ char* username;
 bool started = false;
 int autoPlay = NONE;
 bool activePlayer = false;
+int cycles = 0;
 
 // Terminal settings
 struct termios withEcho, withoutEcho;
 bool outputCustomizable = true;
 pthread_t spinnerTid = 0;
 pthread_t timeoutTid = 0;
-
 
 int main(int argc, char* argv[]) {
     if (argc != N_ARGS_CLIENT + 1 && argc != N_ARGS_CLIENT) {
@@ -119,7 +119,7 @@ int main(int argc, char* argv[]) {
             chooseRandomMove(game->matrix, playerIndex);
         }
         else  if (autoPlay == MEDIUM) {
-            chooseAlmostNextBestMove(game->matrix, playerIndex);
+            chooseAlmostNextBestMove(game->matrix, playerIndex, cycles);
         }
         else {
             chooseNextBestMove(game->matrix, playerIndex);
@@ -240,6 +240,7 @@ void notifyPlayerReady() {
 }
 
 void notifyMove() {
+    cycles++;
     signalSemaphore(semId, WAIT_FOR_MOVE, 1);
 }
 
@@ -364,7 +365,7 @@ void exitHandler(int sig) {
         stopLoadingSpinner(&spinnerTid);
 
     if (firstCTRLCPressed) {
-        if(activePlayer)
+        if (activePlayer)
             kill(game->pids[SERVER], playerIndex == 1 ? SIGUSR1 : SIGUSR2);
 
         printf(CLOSING_MESSAGE);

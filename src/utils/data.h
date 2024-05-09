@@ -174,7 +174,7 @@
 #define OPPONENT_TURN_MESSAGE " (Turno dell'avversario) "
 #define YOUR_SYMBOL_IS_MESSAGE INFO_CHAR FORNG "%s" FNRM ", il tuo simbolo è " BOLD "%s%c" FNRM NO_BOLD "\n"
 #define TIMEOUT_LOSS_MESSAGE ERROR_CHAR "Il tempo è scaduto. Hai perso per inattività\n"
-#define AUTOPLAY_ENABLED_MESSAGE "\n\n" INFO_CHAR "Modalità automatica attivata"
+#define AUTOPLAY_ENABLED_MESSAGE "\n" INFO_CHAR "Modalità automatica attivata"
 #define EASY_MODE_MESSAGE " (" FGRN "facile" FNRM ")"
 #define MEDIUM_MODE_MESSAGE " (" FYEL "media" FNRM ")"
 #define HARD_MODE_MESSAGE " (" FRED "difficile" FNRM ")"
