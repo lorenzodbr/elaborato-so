@@ -79,17 +79,15 @@ void* loadingSpinner() {
     return NULL;
 }
 
-void startLoadingSpinner(pthread_t** tid) {
-    *tid = malloc(sizeof(pthread_t));
-    pthread_create(*tid, NULL, loadingSpinner, NULL);
+void startLoadingSpinner(pthread_t* tid) {
+    pthread_create(tid, NULL, loadingSpinner, NULL);
 }
 
-void stopLoadingSpinner(pthread_t** tid) {
-    if (*tid != NULL) {
-        pthread_cancel(**tid);
+void stopLoadingSpinner(pthread_t* tid) {
+    if (*tid != 0) {
+        pthread_cancel(*tid);
         printAndFlush("\b \b");
-        free(*tid);
-        *tid = NULL;
+        *tid = 0;
     }
 }
 

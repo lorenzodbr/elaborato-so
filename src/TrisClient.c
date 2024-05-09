@@ -57,7 +57,7 @@ bool activePlayer = false;
 // Terminal settings
 struct termios withEcho, withoutEcho;
 bool outputCustomizable = true;
-pthread_t* spinnerTid = NULL;
+pthread_t spinnerTid = 0;
 pthread_t timeoutTid = 0;
 
 
@@ -165,16 +165,13 @@ void initSharedMemory() {
     printf(SERVER_FOUND_SUCCESS, game->pids[SERVER]);
 #endif
 
-    spinnerTid = malloc(sizeof(pthread_t));
-
-    if (spinnerTid == NULL || atexit(disposeMemory)) {
+    if (atexit(disposeMemory)) {
         errExit(INITIALIZATION_ERROR);
     }
 }
 
 void disposeMemory() {
-    // detachSharedMemory(gameId);
-    free(spinnerTid);
+    //detachSharedMemory(gameId);
 }
 
 void initSemaphores() {

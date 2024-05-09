@@ -53,7 +53,7 @@ int playersCount = 0;
 // Terminal settings
 struct termios withEcho, withoutEcho;
 bool outputCustomizable = true;
-pthread_t* spinnerTid = NULL;
+pthread_t spinnerTid = 0;
 
 // TODO: handle if IPCs with the same key are already present
 
@@ -200,9 +200,7 @@ void initSharedMemory() {
 
     game = (tris_game_t*)attachSharedMemory(gameId);
 
-    spinnerTid = malloc(sizeof(pthread_t));
-
-    if (atexit(disposeMemory) || spinnerTid == NULL) {
+    if (atexit(disposeMemory)) {
         errExit(INITIALIZATION_ERROR);
     }
 
@@ -215,7 +213,6 @@ void initSharedMemory() {
 void disposeMemory() {
     disposeSharedMemory(gameId);
     detachSharedMemory(game);
-    free(spinnerTid);
 }
 
 void initSemaphores() {
