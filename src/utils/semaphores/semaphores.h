@@ -1,32 +1,29 @@
-#include <sys/types.h>
+#include <errno.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
-#include <errno.h>
+#include <sys/types.h>
 
 #include "../errExit.h"
 
 #ifndef SEMUN_H
 #define SEMUN_H
-union semun
-{
+union semun {
     int val;
-    struct semid_ds *buf;
-    unsigned short *array;
+    struct semid_ds* buf;
+    unsigned short* array;
 };
 #endif
 
 int getSemaphores(int nsems);
 void setSemaphore(int semid, int semnum, int value);
-void setSemaphores(int semid, int nsems, short unsigned *values);
+void setSemaphores(int semid, int nsems, short unsigned* values);
 void disposeSemaphore(int semid);
 void waitSemaphore(int semid, int semnum, int value);
 void signalSemaphore(int semid, int semnum, int value);
 
-int getSemaphores(int nsems)
-{
+int getSemaphores(int nsems) {
     int semId = semget(SEM_ID, nsems, IPC_CREAT | PERM);
-    if (semId < 0)
-    {
+    if (semId < 0) {
 #if DEBUG
         errExit(SEMAPHORE_INITIALIZATION_ERROR);
 #else
@@ -41,10 +38,8 @@ int getSemaphores(int nsems)
     return semId;
 }
 
-void setSemaphore(int semid, int semnum, int value)
-{
-    if (semctl(semid, semnum, SETVAL, value) < 0)
-    {
+void setSemaphore(int semid, int semnum, int value) {
+    if (semctl(semid, semnum, SETVAL, value) < 0) {
 #if DEBUG
         errExit(SEMAPHORE_INITIALIZATION_ERROR);
 #else
@@ -57,13 +52,11 @@ void setSemaphore(int semid, int semnum, int value)
 #endif
 }
 
-void setSemaphores(int semid, int nsems, short unsigned *values)
-{
+void setSemaphores(int semid, int nsems, short unsigned* values) {
     union semun arg;
     arg.array = values;
 
-    if (semctl(semid, 0, SETALL, arg) < 0)
-    {
+    if (semctl(semid, 0, SETALL, arg) < 0) {
 #if DEBUG
         errExit(SEMAPHORE_INITIALIZATION_ERROR);
 #else
@@ -76,10 +69,8 @@ void setSemaphores(int semid, int nsems, short unsigned *values)
 #endif
 }
 
-void disposeSemaphore(int semid)
-{
-    if (semctl(semid, 0, IPC_RMID) < 0)
-    {
+void disposeSemaphore(int semid) {
+    if (semctl(semid, 0, IPC_RMID) < 0) {
 #if DEBUG
         errExit(SEMAPHORE_DEALLOCATION_ERROR);
 #else
@@ -92,16 +83,14 @@ void disposeSemaphore(int semid)
 #endif
 }
 
-void waitSemaphore(int semid, int semnum, int value)
-{
+void waitSemaphore(int semid, int semnum, int value) {
     if (value > 0)
         value *= -1;
 
-    struct sembuf sops = {semnum, value, 0};
+    struct sembuf sops = { semnum, value, 0 };
 
     int semopRet = semop(semid, &sops, 1);
-    if (semopRet < 0 && (errno != EINTR || errno != EIDRM))
-    {
+    if (semopRet < 0 && (errno != EINTR && errno != EIDRM)) {
 #if DEBUG
         errExit(SEMAPHORE_WAITING_ERROR);
 #else
@@ -110,13 +99,11 @@ void waitSemaphore(int semid, int semnum, int value)
     }
 }
 
-void signalSemaphore(int semid, int semnum, int value)
-{
-    struct sembuf sops = {semnum, value, 0};
+void signalSemaphore(int semid, int semnum, int value) {
+    struct sembuf sops = { semnum, value, 0 };
 
     int semopRet = semop(semid, &sops, 1);
-    if (semopRet < 0 && (errno != EINTR || errno != EIDRM))
-    {
+    if (semopRet < 0 && (errno != EINTR || errno != EIDRM)) {
 #if DEBUG
         errExit(SEMAPHORE_SIGNALING_ERROR);
 #else

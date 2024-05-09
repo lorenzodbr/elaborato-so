@@ -5,7 +5,7 @@
 
 // ----------------- DEBUG ------------------
 
-#define DEBUG 0
+#define DEBUG 1
 
 // Args
 #define N_ARGS_SERVER 3
@@ -77,14 +77,13 @@
 #define FTOK_PATH ".config"
 
 // Semaphore indexes
-#define N_SEM 7
+#define N_SEM 6
 #define WAIT_FOR_PLAYERS 0
 #define WAIT_FOR_OPPONENT_READY 1
 #define PID_LOCK 2
 #define PLAYER_ONE_TURN 3
 #define PLAYER_TWO_TURN 4
 #define WAIT_FOR_MOVE 5
-#define OK_TO_DISPOSE 6
 
 // Sizes
 #define MATRIX_SIDE_LEN 3
@@ -94,7 +93,7 @@
 #define PID_ARRAY_LEN 3
 #define USERNAMES_ARRAY_LEN 3
 #define USERNAME_MAX_LEN 30
-#define USERNAME_MIN_LEN 3
+#define USERNAME_MIN_LEN 2
 #define SYMBOLS_ARRAY_LEN 2
 
 // ----------------- GAME --------------------
@@ -182,7 +181,7 @@
 
 // General errors
 #define USAGE_ERROR_SERVER "Uso: ./TrisServer <timeout> <playerOneSymbol> <playerTwoSymbol>"
-#define USAGE_ERROR_CLIENT "Uso: ./TrisClient <username>"
+#define USAGE_ERROR_CLIENT "Uso: ./TrisClient <username> [*]"
 #define TOO_MANY_PLAYERS_ERROR "Troppi giocatori connessi. Riprova più tardi.\n"
 #define SAME_USERNAME_ERROR "Il nome utente è già in uso. Riprova con un altro nome.\n"
 #define INITIALIZATION_ERROR "Errore durante l'inizializzazione."
@@ -190,11 +189,13 @@
 #define NO_SERVER_FOUND_ERROR "Nessun server trovato. Esegui TrisServer prima di eseguire TrisClient.\n"
 #define SERVER_ALREADY_RUNNING_ERROR "Il server è già in esecuzione. Esegui un solo server alla volta.\n"
 #define USERNAME_TOO_LONG_ERROR "Il nome utente non può superare i 30 caratteri."
-#define USERNAME_TOO_SHORT_ERROR "Il nome utente deve contenere almeno 3 caratteri."
+#define USERNAME_TOO_SHORT_ERROR "Il nome utente deve contenere almeno 2 caratteri."
+#define AUTOPLAY_NOT_ALLOWED_ERROR "Non è possibile giocare in modalità automatica con un altro giocatore già collegato."
 
 // Error codes
 #define TOO_MANY_PLAYERS_ERROR_CODE -1
 #define SAME_USERNAME_ERROR_CODE -2
+#define AUTOPLAY_NOT_ALLOWED_ERROR_CODE -3
 
 // Args errors
 #define TIMEOUT_INVALID_CHAR_ERROR "Il valore specificato per il timeout non è valido."
@@ -219,3 +220,6 @@
 
 // Fork errors
 #define FORK_ERROR "Errore durante la creazione di un processo figlio."
+
+// Exec errors
+#define EXEC_ERROR "Errore durante l'esecuzione di un programma."

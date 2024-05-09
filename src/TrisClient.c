@@ -31,10 +31,9 @@ void timeoutHandler(int sig);
 void showInput();
 void initTerminalSettings();
 void disposeMemory();
-void notifyOkToDispose();
 
 // Shared memory
-tris_game_t *game;
+tris_game_t* game;
 int gameId;
 
 // Semaphores
@@ -43,31 +42,40 @@ int semId;
 // State variables
 bool firstCTRLCPressed = false;
 int playerIndex = -1;
-char *username;
+char* username;
 bool started = false;
 bool selfQuit = false;
+bool autoPlay = false;
+bool activePlayer = false;
 
 // Terminal settings
 struct termios withEcho, withoutEcho;
 bool outputCustomizable = true;
-pthread_t *spinnerTid = NULL;
+pthread_t* spinnerTid = NULL;
 pthread_t timeoutTid = 0;
 
-int main(int argc, char *argv[])
-{
-    if (argc != N_ARGS_CLIENT + 1 && argc != N_ARGS_CLIENT)
-    {
+int main(int argc, char* argv[]) {
+    if (argc != N_ARGS_CLIENT + 1 && argc != N_ARGS_CLIENT) {
         errExit(USAGE_ERROR_CLIENT);
     }
 
+    if (argc == N_ARGS_CLIENT + 1) {
+        if (strcmp(argv[2], "*") != 0) {
+            printf("%s", argv[2]);
+            errExit(USAGE_ERROR_CLIENT);
+        }
+        else {
+            autoPlay = true;
+            activePlayer = true;
+        }
+    }
+
     username = argv[1];
-    if (strlen(username) >= USERNAME_MAX_LEN)
-    {
+    if (strlen(username) >= USERNAME_MAX_LEN) {
         errExit(USERNAME_TOO_LONG_ERROR);
     }
 
-    if (strlen(username) < USERNAME_MIN_LEN)
-    {
+    if (strlen(username) < USERNAME_MIN_LEN) {
         errExit(USERNAME_TOO_SHORT_ERROR);
     }
 
@@ -75,21 +83,25 @@ int main(int argc, char *argv[])
     notifyPlayerReady();
     waitForOpponent();
 
-    if (playerIndex != INITIAL_TURN)
-    {
+    if (playerIndex != INITIAL_TURN) {
         printMoveScreen();
         printAndFlush(OPPONENT_TURN_MESSAGE);
     }
 
-    do
-    {
+    do {
         waitForMove();
 
         // Prints before the move
         printMoveScreen();
-        askForInput();
 
-        stopTimeoutPrint(timeoutTid);
+        // if (activePlayer) {
+            askForInput();
+            stopTimeoutPrint(timeoutTid);
+        // }
+        // else {
+        //     chooseNextBestMove(game->matrix, playerIndex);
+        //     printf("choosing next best move\n");
+        // }
 
         notifyMove();
 
@@ -105,8 +117,7 @@ int main(int argc, char *argv[])
     return EXIT_SUCCESS;
 }
 
-void init()
-{
+void init() {
     printWelcomeMessageClient(username);
     printLoadingMessage();
 
@@ -118,11 +129,9 @@ void init()
     printLoadingCompleteMessage();
 }
 
-void initSharedMemory()
-{
+void initSharedMemory() {
     gameId = getSharedMemory(GAME_SIZE, GAME_ID);
-    if (gameId < 0)
-    {
+    if (gameId < 0) {
         printError(NO_SERVER_FOUND_ERROR);
         exit(EXIT_FAILURE);
     }
@@ -133,19 +142,17 @@ void initSharedMemory()
     printf(SHARED_MEMORY_OBTAINED_SUCCESS, gameId);
 #endif
 
-    if ((playerIndex = recordJoin(game, getpid(), username)) == TOO_MANY_PLAYERS_ERROR_CODE)
-    {
+    if ((playerIndex = recordJoin(game, getpid(), username, autoPlay)) == TOO_MANY_PLAYERS_ERROR_CODE) {
         errExit(TOO_MANY_PLAYERS_ERROR);
     }
-    else if (playerIndex == SAME_USERNAME_ERROR_CODE)
-    {
+    else if (playerIndex == SAME_USERNAME_ERROR_CODE) {
         errExit(SAME_USERNAME_ERROR);
     }
+    else if (playerIndex == AUTOPLAY_NOT_ALLOWED_ERROR_CODE) {
+        errExit(AUTOPLAY_NOT_ALLOWED_ERROR);
+    }
 
-    // if (atexit(notifyOkToDispose) != 0)
-    // {
-    //     errExit(INITIALIZATION_ERROR);
-    // }
+    autoPlay = game->autoplay;
 
 #if DEBUG
     printf(SERVER_FOUND_SUCCESS, game->pids[SERVER]);
@@ -153,28 +160,21 @@ void initSharedMemory()
 
     spinnerTid = malloc(sizeof(pthread_t));
 
-    if (spinnerTid == NULL)
-    {
-        errExit(INITIALIZATION_ERROR);
-    }
-
-    if(atexit(disposeMemory)){
+    if (spinnerTid == NULL || atexit(disposeMemory)) {
         errExit(INITIALIZATION_ERROR);
     }
 }
 
-void disposeMemory(){
+void disposeMemory() {
     // detachSharedMemory(gameId);
     free(spinnerTid);
 }
 
-void initSemaphores()
-{
+void initSemaphores() {
     semId = getSemaphores(N_SEM);
 }
 
-void initSignals()
-{
+void initSignals() {
     sigset_t set;
     sigfillset(&set);
     sigdelset(&set, SIGINT);
@@ -189,29 +189,24 @@ void initSignals()
         signal(SIGUSR1, serverQuitHandler) == SIG_ERR ||
         signal(SIGUSR2, checkResults) == SIG_ERR ||
         signal(SIGHUP, quitHandler) == SIG_ERR ||
-        signal(SIGTERM, exitHandler) == SIG_ERR)
-    {
+        signal(SIGTERM, exitHandler) == SIG_ERR) {
         printError(INITIALIZATION_ERROR);
         exit(EXIT_FAILURE);
     }
 }
 
-void initTerminalSettings()
-{
-    if ((outputCustomizable = initOutputSettings(&withEcho, &withoutEcho)))
-    {
+void initTerminalSettings() {
+    if ((outputCustomizable = initOutputSettings(&withEcho, &withoutEcho))) {
         setInput(&withoutEcho);
     }
 
-    if (atexit(showInput))
-    {
+    if (atexit(showInput)) {
         printError(INITIALIZATION_ERROR);
         exit(EXIT_FAILURE);
     }
 }
 
-void showInput()
-{
+void showInput() {
     setInput(&withEcho);
 
 #if DEBUG
@@ -219,34 +214,24 @@ void showInput()
 #endif
 }
 
-void notifyPlayerReady()
-{
+void notifyPlayerReady() {
     signalSemaphore(semId, WAIT_FOR_PLAYERS, 1);
 }
 
-void notifyMove()
-{
+void notifyMove() {
     signalSemaphore(semId, WAIT_FOR_MOVE, 1);
 }
 
-void notifyOkToDispose()
-{
-    if (!started && selfQuit)
-    {
+void waitForOpponent() {
+    if (autoPlay) {
         return;
     }
 
-    signalSemaphore(semId, OK_TO_DISPOSE, 1);
-}
-
-void waitForOpponent()
-{
     printAndFlush(game->usernames[playerIndex - 1]);
     printAndFlush(WAITING_FOR_OPPONENT_MESSAGE);
     startLoadingSpinner(&spinnerTid);
 
-    do
-    {
+    do {
         errno = 0;
         waitSemaphore(semId, WAIT_FOR_OPPONENT_READY, 1);
     } while (errno == EINTR);
@@ -256,10 +241,8 @@ void waitForOpponent()
     started = true;
 }
 
-void waitForMove()
-{
-    do
-    {
+void waitForMove() {
+    do {
         errno = 0;
         waitSemaphore(semId, PLAYER_ONE_TURN + playerIndex - 1, 1);
     } while (errno == EINTR);
@@ -267,27 +250,22 @@ void waitForMove()
     ignorePreviousInput();
 }
 
-void waitForResponse()
-{
-    do
-    {
+void waitForResponse() {
+    do {
         errno = 0;
         waitSemaphore(semId, PLAYER_ONE_TURN + playerIndex - 1, 1);
     } while (errno == EINTR);
 }
 
-void timeoutHandler(int sig)
-{
+void timeoutHandler(int sig) {
     printMoveScreen();
     printf(TIMEOUT_LOSS_MESSAGE);
     quitHandler(sig);
     exit(EXIT_FAILURE);
 }
 
-void initTimeout()
-{
-    if (game->timeout == 0)
-    {
+void initTimeout() {
+    if (game->timeout == 0) {
         return;
     }
 
@@ -297,18 +275,15 @@ void initTimeout()
     startTimeoutPrint(&timeoutTid, &game->timeout);
 }
 
-void resetTimeout()
-{
-    if (game->timeout == 0)
-    {
+void resetTimeout() {
+    if (game->timeout == 0) {
         return;
     }
 
     alarm(0);
 }
 
-void askForInput()
-{
+void askForInput() {
     char input[MOVE_INPUT_LEN];
 
     showInput(withoutEcho);
@@ -324,8 +299,7 @@ void askForInput()
 
     move_t move;
 
-    while (!isValidMove(game->matrix, input, &move))
-    {
+    while (!isValidMove(game->matrix, input, &move)) {
         firstCTRLCPressed = false; // reset firstCTRLCPressed if something else is inserted
 
         printSpaces((digits(game->timeout) + 3) * (game->timeout != 0));
@@ -338,44 +312,36 @@ void askForInput()
     resetTimeout();
 }
 
-void printMoveScreen()
-{
+void printMoveScreen() {
     clearScreenClient();
     printSymbol(game->symbols[playerIndex - 1], playerIndex, username);
     printTimeout(game->timeout);
     printBoard(game->matrix, game->symbols[0], game->symbols[1]);
 }
 
-void checkResults(int sig)
-{
+void checkResults(int sig) {
     printMoveScreen();
 
-    if (game->result == DRAW)
-    {
+    if (game->result == DRAW) {
         printf(DRAW_MESSAGE);
     }
-    else if (game->result == QUIT)
-    {
+    else if (game->result == QUIT) {
         printf(YOU_WON_FOR_QUIT_MESSAGE);
     }
-    else if (game->result != playerIndex)
-    {
+    else if (game->result != playerIndex) {
         printf(YOU_LOST_MESSAGE);
     }
-    else
-    {
+    else {
         printf(YOU_WON_MESSAGE);
     }
 
     exit(EXIT_SUCCESS);
 }
 
-void exitHandler(int sig)
-{
+void exitHandler(int sig) {
     stopLoadingSpinner(&spinnerTid);
 
-    if (firstCTRLCPressed)
-    {
+    if (firstCTRLCPressed) {
         kill(game->pids[SERVER], playerIndex == 1 ? SIGUSR1 : SIGUSR2);
         selfQuit = true;
 
@@ -385,21 +351,18 @@ void exitHandler(int sig)
     firstCTRLCPressed = true;
     printf(CTRLC_AGAIN_TO_QUIT_MESSAGE);
 
-    if (started)
-    {
+    if (started) {
         printf(THIS_WAY_YOU_WILL_LOSE_MESSAGE);
     }
 
     fflush(stdout);
 }
 
-void quitHandler(int sig)
-{
+void quitHandler(int sig) {
     kill(game->pids[SERVER], playerIndex == 1 ? SIGUSR1 : SIGUSR2);
 }
 
-void serverQuitHandler(int sig)
-{
+void serverQuitHandler(int sig) {
     printf(SERVER_QUIT_MESSAGE);
     exit(EXIT_FAILURE);
 }
