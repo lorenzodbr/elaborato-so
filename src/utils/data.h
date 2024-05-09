@@ -66,6 +66,9 @@
 #define VERTICAL_SEPARATOR " │"
 #define HORIZONTAL_SEPARATOR "\n     ───┼───┼───\n"
 #define MATRIX_TOP_ROW "\n      A   B   C\n\n"
+#define EASY_AI_CHAR "*"
+#define MEDIUM_AI_CHAR "**"
+#define HARD_AI_CHAR "***"
 
 // ------------------ IPCS --------------------
 
@@ -122,6 +125,12 @@
 #define PLAYER_ONE 1
 #define PLAYER_TWO 2
 
+// AI difficulty
+#define NONE 0
+#define EASY 1
+#define MEDIUM 2
+#define HARD 3
+
 // ----------------- MESSAGES ----------------
 
 // General messages
@@ -166,6 +175,9 @@
 #define YOUR_SYMBOL_IS_MESSAGE INFO_CHAR FORNG "%s" FNRM ", il tuo simbolo è " BOLD "%s%c" FNRM NO_BOLD "\n"
 #define TIMEOUT_LOSS_MESSAGE ERROR_CHAR "Il tempo è scaduto. Hai perso per inattività\n"
 #define AUTOPLAY_ENABLED_MESSAGE "\n\n" INFO_CHAR "Modalità automatica attivata"
+#define EASY_MODE_MESSAGE " (" FGRN "facile" FNRM ")"
+#define MEDIUM_MODE_MESSAGE " (" FYEL "media" FNRM ")"
+#define HARD_MODE_MESSAGE " (" FRED "difficile" FNRM ")"
 
 // General success messages
 #define SERVER_FOUND_SUCCESS FGRN SUCCESS_CHAR "Trovato TrisServer con PID = %d\n" FNRM

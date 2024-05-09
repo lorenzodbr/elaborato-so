@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include <termios.h>
 #include <unistd.h>
+#include <time.h>
 
 #include "utils/data.h"
 #include "utils/globals.h"
@@ -50,8 +51,7 @@ bool firstCTRLCPressed = false;
 int playerIndex = -1;
 char* username;
 bool started = false;
-bool selfQuit = false;
-bool autoPlay = false;
+int autoPlay = NONE;
 bool activePlayer = false;
 
 // Terminal settings
@@ -67,14 +67,25 @@ int main(int argc, char* argv[]) {
     }
 
     if (argc == N_ARGS_CLIENT + 1) {
-        if (strcmp(argv[2], "*") != 0) {
+        int checkEasy = strcmp(argv[2], EASY_AI_CHAR);
+        int checkMedium = strcmp(argv[2], MEDIUM_AI_CHAR);
+        int checkHard = strcmp(argv[2], HARD_AI_CHAR);
+
+        if (checkEasy != 0 && checkMedium != 0 && checkHard != 0) {
             printf("%s", argv[2]);
             errExit(USAGE_ERROR_CLIENT);
         }
-        else {
-            autoPlay = true;
-            activePlayer = true;
+        else if (checkEasy == 0) {
+            autoPlay = EASY;
         }
+        else if (checkMedium == 0) {
+            autoPlay = MEDIUM;
+        }
+        else {
+            autoPlay = HARD;
+        }
+
+        activePlayer = true;
     }
 
     username = argv[1];
@@ -101,8 +112,14 @@ int main(int argc, char* argv[]) {
         // Prints before the move
         printMoveScreen();
 
-        if (!autoPlay || activePlayer) {
+        if (autoPlay == NONE || activePlayer) {
             askForInput();
+        }
+        else if (autoPlay == EASY) {
+            chooseRandomMove(game->matrix, playerIndex);
+        }
+        else  if (autoPlay == MEDIUM) {
+            chooseAlmostNextBestMove(game->matrix, playerIndex);
         }
         else {
             chooseNextBestMove(game->matrix, playerIndex);
@@ -343,12 +360,12 @@ void checkResults(int sig) {
 }
 
 void exitHandler(int sig) {
-    if(!started)
+    if (!started)
         stopLoadingSpinner(&spinnerTid);
 
     if (firstCTRLCPressed) {
-        kill(game->pids[SERVER], playerIndex == 1 ? SIGUSR1 : SIGUSR2);
-        selfQuit = true;
+        if(activePlayer)
+            kill(game->pids[SERVER], playerIndex == 1 ? SIGUSR1 : SIGUSR2);
 
         printf(CLOSING_MESSAGE);
         exit(EXIT_SUCCESS);
@@ -365,7 +382,8 @@ void exitHandler(int sig) {
 }
 
 void quitHandler(int sig) {
-    kill(game->pids[SERVER], playerIndex == 1 ? SIGUSR1 : SIGUSR2);
+    if (activePlayer)
+        kill(game->pids[SERVER], playerIndex == 1 ? SIGUSR1 : SIGUSR2);
 }
 
 void serverQuitHandler(int sig) {

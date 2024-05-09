@@ -24,7 +24,7 @@ typedef struct {
     pid_t pids[PID_ARRAY_LEN];
     char usernames[USERNAMES_ARRAY_LEN][USERNAME_MAX_LEN];
     int result;
-    bool autoplay;
+    int autoplay;
     char symbols[SYMBOLS_ARRAY_LEN];
     int timeout;
 } tris_game_t;
@@ -239,7 +239,7 @@ void initPids(int* pidsPointer) {
 }
 
 // set specified pid to the first empty slot (out of 3)
-int recordJoin(tris_game_t* game, int pid, char* username, bool autoPlay) {
+int recordJoin(tris_game_t* game, int pid, char* username, int autoPlay) {
     int semId = getSemaphores(N_SEM), playerIndex = TOO_MANY_PLAYERS_ERROR_CODE;
 
     waitSemaphore(semId, PID_LOCK, 1);
@@ -252,14 +252,13 @@ int recordJoin(tris_game_t* game, int pid, char* username, bool autoPlay) {
                 break;
             }
 
-            if (autoPlay) {
-                game->autoplay = true;
+            if (autoPlay != NONE) {
+                game->autoplay = autoPlay;
             }
 
             game->pids[i] = pid;
             playerIndex = i;
             strcpy(game->usernames[i], username);
-
 
             break;
         }
@@ -423,4 +422,19 @@ void chooseNextBestMove(int* gameMatrix, int playerIndex) {
     }
 
     gameMatrix[bestMove.row + bestMove.col * MATRIX_SIDE_LEN] = playerIndex;
+}
+
+void chooseRandomMove(int* gameMatrix, int playerIndex) {
+    int randomIndex;
+
+    do {
+        randomIndex = rand() % MATRIX_SIZE;
+    } while (gameMatrix[randomIndex] != 0);
+
+    gameMatrix[randomIndex] = playerIndex;
+}
+
+
+void chooseAlmostNextBestMove(int* gameMatrix, int playerIndex) {
+    chooseNextBestMove(gameMatrix, playerIndex);
 }

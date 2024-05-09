@@ -204,7 +204,7 @@ void initSharedMemory() {
         errExit(INITIALIZATION_ERROR);
     }
 
-    game->autoplay = false;
+    game->autoplay = NONE;
     initBoard(game->matrix);
     initPids(game->pids);
     setPidAt(game->pids, 0, getpid());
@@ -318,8 +318,10 @@ void waitForPlayers() {
     int forkRet = 0;
 
     while (playersCount < 2) {
-        if (game->autoplay && playersCount == 1) {
+        if (game->autoplay != NONE && playersCount == 1) {
             if ((forkRet = fork()) == 0) {
+                srand(getpid());
+
                 close(STDOUT_FILENO);
                 execl("./bin/TrisClient", "./TrisClient", "AI", NULL);
                 errExit(EXEC_ERROR);
@@ -329,6 +331,14 @@ void waitForPlayers() {
             }
             else {
                 printf(AUTOPLAY_ENABLED_MESSAGE);
+
+                if (game->autoplay == EASY)
+                    printf(EASY_MODE_MESSAGE);
+                else if (game->autoplay == MEDIUM)
+                    printf(MEDIUM_MODE_MESSAGE);
+                else
+                    printf(HARD_MODE_MESSAGE);
+
                 break;
             }
         }
