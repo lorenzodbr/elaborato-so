@@ -2,7 +2,7 @@
  * VR487434 - Lorenzo Di Berardino
  * VR486588 - Filippo Milani
  * 09/05/2024
- *************************************/
+ ************************************/
 
 #include <limits.h>
 #include <pthread.h>
@@ -24,7 +24,7 @@ typedef struct {
 typedef struct {
     int matrix[MATRIX_SIZE];
     pid_t pids[PID_ARRAY_LEN];
-    char usernames[USERNAMES_ARRAY_LEN][USERNAME_MAX_LEN];
+    char usernames[USERNAMES_ARRAY_LEN][USERNAME_MAX_LEN + 1];
     int result;
     int autoplay;
     char symbols[SYMBOLS_ARRAY_LEN];

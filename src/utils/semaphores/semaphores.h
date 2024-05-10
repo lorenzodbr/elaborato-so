@@ -2,7 +2,7 @@
  * VR487434 - Lorenzo Di Berardino
  * VR486588 - Filippo Milani
  * 09/05/2024
- *************************************/
+ ************************************/
 
 #include <errno.h>
 #include <sys/ipc.h>

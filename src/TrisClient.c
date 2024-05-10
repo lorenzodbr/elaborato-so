@@ -2,7 +2,7 @@
  * VR487434 - Lorenzo Di Berardino
  * VR486588 - Filippo Milani
  * 09/05/2024
- *************************************/
+ ************************************/
 
 #include <errno.h>
 #include <signal.h>
@@ -47,18 +47,19 @@ int sem_id;
 
 // State variables
 bool first_CTRLC_pressed = false;
-int player_index = -1;
-char* username;
 bool started = false;
-int autoplay = NONE;
 bool active_player = false;
+
+char* username;
+
+int player_index = -1;
 int cycles = 0;
+int autoplay = NONE;
 
 // Terminal settings
 struct termios with_echo, without_echo;
 bool output_customizable = true;
-pthread_t spinner_tid = 0;
-pthread_t timeout_tid = 0;
+pthread_t spinner_tid = 0, timeout_tid = 0;
 
 int main(int argc, char* argv[])
 {

@@ -2,7 +2,7 @@
  * VR487434 - Lorenzo Di Berardino
  * VR486588 - Filippo Milani
  * 09/05/2024
- *************************************/
+ ************************************/
 
 #include <errno.h>
 #include <signal.h>
@@ -48,6 +48,7 @@ int sem_id = -1;
 // State variables
 bool first_CTRLC_pressed = false;
 bool started = false;
+
 int turn = INITIAL_TURN;
 int players_count = 0;
 
@@ -113,9 +114,9 @@ int main(int argc, char* argv[])
 void parse_args(int argc, char* argv[])
 {
     // Parsing timeout
-    char* endptr;
-    game->timeout = strtol(argv[1], &endptr, 10);
-    if (*endptr != '\0') {
+    char* str_ptr;
+    game->timeout = strtol(argv[1], &str_ptr, 10);
+    if (*str_ptr != '\0') {
         errexit(TIMEOUT_INVALID_CHAR_ERROR);
     }
 
