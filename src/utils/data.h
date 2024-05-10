@@ -176,7 +176,7 @@
 #define OPPONENT_TURN_MESSAGE " (Turno dell'avversario) "
 #define YOUR_SYMBOL_IS_MESSAGE INFO_CHAR FORNG "%s" FNRM ", il tuo simbolo è " BOLD "%s%c" FNRM NO_BOLD "\n"
 #define TIMEOUT_LOSS_MESSAGE ERROR_CHAR "Il tempo è scaduto. Hai perso per inattività\n"
-#define AUTOPLAY_ENABLED_MESSAGE "\n" INFO_CHAR "Modalità automatica attivata"
+#define AUTOPLAY_ENABLED_MESSAGE "\n" INFO_CHAR "Modalità AI attivata"
 #define EASY_MODE_MESSAGE " (" FGRN "facile" FNRM ")"
 #define MEDIUM_MODE_MESSAGE " (" FYEL "media" FNRM ")"
 #define HARD_MODE_MESSAGE " (" FRED "difficile" FNRM ")"
@@ -211,7 +211,7 @@
 #define SERVER_ALREADY_RUNNING_ERROR "Il server è già in esecuzione. Esegui un solo server alla volta.\n"
 #define USERNAME_TOO_LONG_ERROR "Il nome utente non può superare i 30 caratteri."
 #define USERNAME_TOO_SHORT_ERROR "Il nome utente deve contenere almeno 2 caratteri."
-#define AUTOPLAY_NOT_ALLOWED_ERROR "Non è possibile giocare in modalità automatica con un altro giocatore già collegato."
+#define AUTOPLAY_NOT_ALLOWED_ERROR "Non è possibile giocare in modalità AI con un altro giocatore già collegato."
 
 // Error codes
 #define TOO_MANY_PLAYERS_ERROR_CODE -1

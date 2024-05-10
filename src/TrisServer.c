@@ -16,7 +16,7 @@
 #include "utils/globals.h"
 #include "utils/shared_memory/shared_memory.h"
 
-void parse_args(int, char**);
+void parse_args(int, char*[]);
 void init();
 void init_terminal();
 void init_shared_memory();

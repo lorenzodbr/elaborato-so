@@ -14,6 +14,8 @@
 
 #include "semaphores/semaphores.h"
 
+// --------- GAME STRUCTURES ---------
+
 typedef struct {
     int row;
     int col;
@@ -28,6 +30,49 @@ typedef struct {
     char symbols[SYMBOLS_ARRAY_LEN];
     int timeout;
 } tris_game_t;
+
+void print_header_server();
+void print_header_client();
+void print_welcome_message_server();
+void print_welcome_message_client(char*);
+void print_loading_message();
+void print_and_flush(const char*);
+void print_spaces(int);
+void* timeout_print_handler(void*);
+void start_timeout_print(pthread_t*, int*);
+void stop_timeout_print(pthread_t);
+void print_loading_complete_message();
+void print_board(int*, char, char);
+void print_symbol(char, int, char*);
+void print_timeout(int);
+void print_error(const char*);
+void clear_screen_server();
+void clear_screen_client();
+void print_success(const char*);
+void* loading_spinner();
+void start_loading_spinner(pthread_t*);
+void stop_loading_spinner(pthread_t*);
+int digits(int);
+int max(int, int);
+int min(int, int);
+int set_input(struct termios*);
+void ignore_previous_input();
+bool init_output_settings(struct termios*, struct termios*);
+void init_board(int*);
+void init_pids(int*);
+int record_join(int, tris_game_t*, int, char*, int);
+void set_pid_at(int, int*, int, int);
+void record_quit(tris_game_t*, int);
+int get_pid(int*, int);
+bool is_valid_move(int*, char*, move_t*);
+int is_game_ended(int*);
+int minimax(int*, int, bool);
+void chooseBestMove(int*, int);
+void chooseRandomMove(int*, int);
+void chooseRandomOrBestMove(int*, int, int);
+void chooseNextMove(int*, int, int, int);
+
+// --------- MESSAGES ---------
 
 void print_header_server()
 {
@@ -68,45 +113,6 @@ void print_and_flush(const char* msg)
 {
     printf("%s", msg);
     fflush(stdout);
-}
-
-void* loading_spinner()
-{
-    while (1) {
-        print_and_flush("\b|");
-        usleep(100000);
-        print_and_flush("\b/");
-        usleep(100000);
-        print_and_flush("\b-");
-        usleep(100000);
-        print_and_flush("\b\\");
-        usleep(100000);
-    }
-
-    return NULL;
-}
-
-void start_loading_spinner(pthread_t* tid)
-{
-    pthread_create(tid, NULL, loading_spinner, NULL);
-}
-
-void stop_loading_spinner(pthread_t* tid)
-{
-    if (*tid != 0) {
-        pthread_cancel(*tid);
-        print_and_flush("\b \b");
-        *tid = 0;
-    }
-}
-
-int digits(int n)
-{
-    if (n < 0)
-        return digits((n == INT_MIN) ? INT_MAX : -n);
-    if (n < 10)
-        return 1;
-    return 1 + digits(n / 10);
 }
 
 void print_spaces(int n)
@@ -150,44 +156,9 @@ void stop_timeout_print(pthread_t tid)
     pthread_cancel(tid);
 }
 
-int set_input(struct termios* policy)
-{
-    return tcsetattr(STDOUT_FILENO, TCSANOW, policy);
-}
-
-void ignore_previous_input()
-{
-    tcflush(STDIN_FILENO, TCIFLUSH);
-}
-
-bool init_output_settings(struct termios* with_echo, struct termios* without_echo)
-{
-    if (tcgetattr(STDOUT_FILENO, with_echo) != 0) {
-        return false;
-    }
-
-    memcpy(without_echo, with_echo, sizeof(struct termios));
-    without_echo->c_lflag &= ~ECHO;
-
-    return true;
-}
-
 void print_loading_complete_message()
 {
     printf(LOADING_COMPLETE_MESSAGE);
-}
-
-void init_board(int* matrix)
-{
-    for (int i = 0; i < MATRIX_SIDE_LEN; i++) {
-        for (int j = 0; j < MATRIX_SIDE_LEN; j++) {
-            matrix[i * MATRIX_SIDE_LEN + j] = 0;
-        }
-    }
-
-#if DEBUG
-    printf(MATRIX_INITIALIZED_MESSAGE);
-#endif
 }
 
 void print_board(int* matrix, char player_one_symbol, char player_two_symbol)
@@ -256,6 +227,96 @@ void print_success(const char* msg)
 {
     print_and_flush(FGRN SUCCESS_CHAR);
     print_and_flush(msg);
+}
+
+void* loading_spinner()
+{
+    while (1) {
+        print_and_flush("\b|");
+        usleep(100000);
+        print_and_flush("\b/");
+        usleep(100000);
+        print_and_flush("\b-");
+        usleep(100000);
+        print_and_flush("\b\\");
+        usleep(100000);
+    }
+
+    return NULL;
+}
+
+void start_loading_spinner(pthread_t* tid)
+{
+    pthread_create(tid, NULL, loading_spinner, NULL);
+}
+
+void stop_loading_spinner(pthread_t* tid)
+{
+    if (*tid != 0) {
+        pthread_cancel(*tid);
+        print_and_flush("\b \b");
+        *tid = 0;
+    }
+}
+
+// --------- MATH ---------
+
+int digits(int n)
+{
+    if (n < 0)
+        return digits((n == INT_MIN) ? INT_MAX : -n);
+    if (n < 10)
+        return 1;
+    return 1 + digits(n / 10);
+}
+
+int max(int a, int b)
+{
+    return a > b ? a : b;
+}
+
+int min(int a, int b)
+{
+    return a < b ? a : b;
+}
+
+// --------- TERMINAL MANAGEMENT ---------
+
+int set_input(struct termios* policy)
+{
+    return tcsetattr(STDOUT_FILENO, TCSANOW, policy);
+}
+
+void ignore_previous_input()
+{
+    tcflush(STDIN_FILENO, TCIFLUSH);
+}
+
+bool init_output_settings(struct termios* with_echo, struct termios* without_echo)
+{
+    if (tcgetattr(STDOUT_FILENO, with_echo) != 0) {
+        return false;
+    }
+
+    memcpy(without_echo, with_echo, sizeof(struct termios));
+    without_echo->c_lflag &= ~ECHO;
+
+    return true;
+}
+
+// --------- GAME MANAGEMENT ---------
+
+void init_board(int* matrix)
+{
+    for (int i = 0; i < MATRIX_SIDE_LEN; i++) {
+        for (int j = 0; j < MATRIX_SIDE_LEN; j++) {
+            matrix[i * MATRIX_SIDE_LEN + j] = 0;
+        }
+    }
+
+#if DEBUG
+    printf(MATRIX_INITIALIZED_MESSAGE);
+#endif
 }
 
 void init_pids(int* pids_pointer)
@@ -380,16 +441,6 @@ int is_game_ended(int* matrix)
     }
 
     return DRAW;
-}
-
-int max(int a, int b)
-{
-    return a > b ? a : b;
-}
-
-int min(int a, int b)
-{
-    return a < b ? a : b;
 }
 
 int minimax(int* game_matrix, int depth, bool is_maximizing)

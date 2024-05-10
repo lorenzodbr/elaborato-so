@@ -203,7 +203,7 @@ void init_shared_memory()
 
 void dispose_memory()
 {
-    detach_shared_memory(game_id);
+    detach_shared_memory(game);
 }
 
 void init_semaphores()
