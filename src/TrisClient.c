@@ -173,7 +173,7 @@ void init_shared_memory()
     }
 
     // Otherwise, attach the shared memory
-    game = attach_shared_memory(game_id);
+    game = (tris_game_t*)attach_shared_memory(game_id);
 
 #if DEBUG
     printf(SHARED_MEMORY_OBTAINED_SUCCESS, game_id);
@@ -203,7 +203,7 @@ void init_shared_memory()
 
 void dispose_memory()
 {
-    // detach_shared_memory(game_id);
+    detach_shared_memory(game_id);
 }
 
 void init_semaphores()
@@ -226,7 +226,11 @@ void init_signals()
     sigprocmask(SIG_SETMASK, &set, NULL);
 
     // Register the signal handlers
-    if (signal(SIGINT, exit_handler) == SIG_ERR || signal(SIGUSR1, server_quit_handler) == SIG_ERR || signal(SIGUSR2, check_results) == SIG_ERR || signal(SIGHUP, quit_handler) == SIG_ERR || signal(SIGTERM, exit_handler) == SIG_ERR) {
+    if (signal(SIGINT, exit_handler) == SIG_ERR
+        || signal(SIGUSR1, server_quit_handler) == SIG_ERR
+        || signal(SIGUSR2, check_results) == SIG_ERR
+        || signal(SIGHUP, quit_handler) == SIG_ERR
+        || signal(SIGTERM, exit_handler) == SIG_ERR) {
         errexit(INITIALIZATION_ERROR);
     }
 }
@@ -236,12 +240,12 @@ void init_terminal_settings()
     // Initialize the terminal settings: if possible, set the terminal to raw mode
     if ((output_customizable = init_output_settings(&with_echo, &without_echo))) {
         set_input(&without_echo);
-    }
 
-    // Register the show_input function to be called at exit
-    if (output_customizable && atexit(show_input)) {
-        print_error(INITIALIZATION_ERROR);
-        exit(EXIT_FAILURE);
+        // Register the show_input function to be called at exit
+        if (atexit(show_input)) {
+            print_error(INITIALIZATION_ERROR);
+            exit(EXIT_FAILURE);
+        }
     }
 }
 
