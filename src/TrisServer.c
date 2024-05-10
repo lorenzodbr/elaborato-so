@@ -188,6 +188,7 @@ void printResult() {
 void initTerminal() {
     if ((outputCustomizable = initOutputSettings(&withEcho, &withoutEcho))) {
         setInput(&withoutEcho);
+        printAndFlush(HIDE_CARET);
 
         if (atexit(showInput)) {
             printError(INITIALIZATION_ERROR);
@@ -243,6 +244,7 @@ void disposeSemaphores() {
 void showInput() {
     setInput(&withEcho);
     ignorePreviousInput();
+    printAndFlush(SHOW_CARET);
 
 #if DEBUG
     printf(OUTPUT_RESTORED_SUCCESS);

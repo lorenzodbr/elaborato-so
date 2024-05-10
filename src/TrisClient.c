@@ -104,10 +104,13 @@ int main(int argc, char* argv[]) {
     if (playerIndex != INITIAL_TURN) {
         printMoveScreen();
         printAndFlush(OPPONENT_TURN_MESSAGE);
+        printAndFlush(HIDE_CARET);
     }
 
     do {
         waitForMove();
+
+        printAndFlush(SHOW_CARET);
 
         // Prints before the move
         printMoveScreen();
@@ -115,14 +118,8 @@ int main(int argc, char* argv[]) {
         if (autoPlay == NONE || activePlayer) {
             askForInput();
         }
-        else if (autoPlay == EASY) {
-            chooseRandomMove(game->matrix, playerIndex);
-        }
-        else  if (autoPlay == MEDIUM) {
-            chooseRandomOrBestMove(game->matrix, playerIndex, cycles);
-        }
         else {
-            chooseBestMove(game->matrix, playerIndex);
+            chooseNextMove(game->matrix, autoPlay, playerIndex, cycles);
         }
 
         stopTimeoutPrint(timeoutTid);
@@ -134,6 +131,7 @@ int main(int argc, char* argv[]) {
         printAndFlush(OPPONENT_TURN_MESSAGE);
 
         setInput(&withoutEcho);
+        printAndFlush(HIDE_CARET);
 
         stopTimeoutPrint(timeoutTid);
     } while (1);

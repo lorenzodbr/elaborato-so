@@ -20,6 +20,8 @@
 // ----------------- COLORS ------------------
 
 #define CLEAR_SCREEN "\033[H\033[J"
+#define HIDE_CARET "\e[?25l"
+#define SHOW_CARET "\e[?25h"
 
 // Foreground
 #define FNRM "\x1B[0m"

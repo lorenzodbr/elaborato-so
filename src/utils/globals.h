@@ -443,3 +443,17 @@ void chooseRandomOrBestMove(int* gameMatrix, int playerIndex, int cycles) {
         chooseRandomMove(gameMatrix, playerIndex);
 
 }
+
+void chooseNextMove(int *gameMatrix, int difficulty, int playerIndex, int cycles){
+    switch(difficulty){
+        case EASY:
+            chooseRandomMove(gameMatrix, playerIndex);
+            break;
+        case MEDIUM:
+            chooseRandomOrBestMove(gameMatrix, playerIndex, cycles);
+            break;
+        case HARD:
+            chooseBestMove(gameMatrix, playerIndex);
+            break;
+    }
+}
