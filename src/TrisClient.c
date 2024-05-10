@@ -22,115 +22,122 @@ void notify_player_ready();
 void notify_move();
 void init_shared_memory();
 void init_semaphores();
-void askForInput();
+void ask_for_input();
 void wait_for_opponent();
 void init_signals();
 void exit_handler(int);
-void quitHandler(int);
-void checkResults(int);
-void serverQuitHandler(int);
+void quit_handler(int);
+void check_results(int);
+void server_quit_handler(int);
 void wait_for_move();
-void waitForResponse();
-void printMoveScreen();
-void initTimeout();
-void resetTimeout();
-void timeoutHandler(int);
+void print_move_screen();
+void init_timeout();
+void reset_timeout();
+void timeout_handler(int);
 void show_input();
-void initTerminalSettings();
+void init_terminal_settings();
 void dispose_memory();
 
 // Shared memory
 tris_game_t* game;
-int gameId;
+int game_id;
 
 // Semaphores
-int semId;
+int sem_id;
 
 // State variables
-bool firstCTRLCPressed = false;
-int playerIndex = -1;
+bool first_CTRLC_pressed = false;
+int player_index = -1;
 char* username;
 bool started = false;
-int autoPlay = NONE;
-bool activePlayer = false;
+int autoplay = NONE;
+bool active_player = false;
 int cycles = 0;
 
 // Terminal settings
-struct termios withEcho, withoutEcho;
-bool outputCustomizable = true;
-pthread_t spinnerTid = 0;
-pthread_t timeoutTid = 0;
+struct termios with_echo, without_echo;
+bool output_customizable = true;
+pthread_t spinner_tid = 0;
+pthread_t timeout_tid = 0;
 
 int main(int argc, char* argv[])
 {
+    // Check if the number of arguments is correct
     if (argc != N_ARGS_CLIENT + 1 && argc != N_ARGS_CLIENT) {
-        errExit(USAGE_ERROR_CLIENT);
+        errexit(USAGE_ERROR_CLIENT);
     }
 
+    // if user wants to play against the AI,
+    // check if the AI level is correct
     if (argc == N_ARGS_CLIENT + 1) {
-        int checkEasy = strcmp(argv[2], EASY_AI_CHAR);
-        int checkMedium = strcmp(argv[2], MEDIUM_AI_CHAR);
-        int checkHard = strcmp(argv[2], HARD_AI_CHAR);
+        int check_easy = strcmp(argv[2], EASY_AI_CHAR);
+        int check_medium = strcmp(argv[2], MEDIUM_AI_CHAR);
+        int check_hard = strcmp(argv[2], HARD_AI_CHAR);
 
-        if (checkEasy != 0 && checkMedium != 0 && checkHard != 0) {
-            printf("%s", argv[2]);
-            errExit(USAGE_ERROR_CLIENT);
-        } else if (checkEasy == 0) {
-            autoPlay = EASY;
-        } else if (checkMedium == 0) {
-            autoPlay = MEDIUM;
+        if (check_easy != 0 && check_medium != 0 && check_hard != 0) {
+            errexit(USAGE_ERROR_CLIENT);
+        } else if (check_easy == 0) {
+            autoplay = EASY;
+        } else if (check_medium == 0) {
+            autoplay = MEDIUM;
         } else {
-            autoPlay = HARD;
+            autoplay = HARD;
         }
 
-        activePlayer = true;
+        active_player = true;
     }
 
+    // Check if the username length is correct
     username = argv[1];
     if (strlen(username) >= USERNAME_MAX_LEN) {
-        errExit(USERNAME_TOO_LONG_ERROR);
+        errexit(USERNAME_TOO_LONG_ERROR);
     }
 
     if (strlen(username) < USERNAME_MIN_LEN) {
-        errExit(USERNAME_TOO_SHORT_ERROR);
+        errexit(USERNAME_TOO_SHORT_ERROR);
     }
 
+    // Initialize the client
     init();
+
+    // After the initialization, the client is ready to play
     notify_player_ready();
+
+    // Wait for the opponent to be ready
     wait_for_opponent();
 
-    if (playerIndex != INITIAL_TURN) {
-        printMoveScreen();
-        printAndFlush(OPPONENT_TURN_MESSAGE);
-        printAndFlush(HIDE_CARET);
+    if (player_index != INITIAL_TURN) {
+        print_move_screen();
+        print_and_flush(OPPONENT_TURN_MESSAGE);
+        print_and_flush(HIDE_CARET);
     }
 
     do {
         wait_for_move();
 
-        printAndFlush(SHOW_CARET);
+        print_and_flush(SHOW_CARET);
 
         // Prints before the move
-        printMoveScreen();
+        print_move_screen();
 
-        if (autoPlay == NONE || activePlayer) {
-            askForInput();
+        if (autoplay == NONE || active_player) {
+            ask_for_input();
         } else {
-            chooseNextMove(game->matrix, autoPlay, playerIndex, cycles);
+            chooseNextMove(game->matrix, autoplay, player_index, cycles);
         }
 
-        stopTimeoutPrint(timeoutTid);
+        stop_timeout_print(timeout_tid);
 
         notify_move();
 
         // Prints after the move
-        printMoveScreen();
-        printAndFlush(OPPONENT_TURN_MESSAGE);
+        print_move_screen();
+        print_and_flush(OPPONENT_TURN_MESSAGE);
 
-        setInput(&withoutEcho);
-        printAndFlush(HIDE_CARET);
+        set_input(&without_echo);
+        print_and_flush(HIDE_CARET);
 
-        stopTimeoutPrint(timeoutTid);
+        stop_timeout_print(timeout_tid);
     } while (1);
 
     return EXIT_SUCCESS;
@@ -138,64 +145,76 @@ int main(int argc, char* argv[])
 
 void init()
 {
-    printWelcomeMessageClient(username);
-    printLoadingMessage();
+    // Print the welcome message
+    print_welcome_message_client(username);
+    print_loading_message();
 
-    srand(time(NULL));
-
+    // Initialize IPCs and terminal settings
     init_semaphores();
     init_shared_memory();
     init_signals();
-    initTerminalSettings();
+    init_terminal_settings();
 
-    printLoadingCompleteMessage();
+    // Set the seed for the random number generator (used by the AI)
+    srand(time(NULL));
+
+    // Print the loading complete message
+    print_loading_complete_message();
 }
 
 void init_shared_memory()
 {
-    gameId = getSharedMemory(GAME_SIZE, GAME_ID);
-    if (gameId < 0) {
-        printError(NO_SERVER_FOUND_ERROR);
-        exit(EXIT_FAILURE);
+    // Get the shared memory without creating it
+    game_id = get_shared_memory(GAME_SIZE, GAME_ID);
+
+    // If the shared memory getter returns -1, then no server is running
+    if (game_id < 0) {
+        errexit(NO_SERVER_FOUND_ERROR);
     }
 
-    game = attachSharedMemory(gameId);
+    // Otherwise, attach the shared memory
+    game = attach_shared_memory(game_id);
 
 #if DEBUG
-    printf(SHARED_MEMORY_OBTAINED_SUCCESS, gameId);
+    printf(SHARED_MEMORY_OBTAINED_SUCCESS, game_id);
 #endif
 
-    if ((playerIndex = recordJoin(game, getpid(), username, autoPlay)) == TOO_MANY_PLAYERS_ERROR_CODE) {
-        errExit(TOO_MANY_PLAYERS_ERROR);
-    } else if (playerIndex == SAME_USERNAME_ERROR_CODE) {
-        errExit(SAME_USERNAME_ERROR);
-    } else if (playerIndex == AUTOPLAY_NOT_ALLOWED_ERROR_CODE) {
-        errExit(AUTOPLAY_NOT_ALLOWED_ERROR);
+    // Join the game by setting the player PID and username
+    if ((player_index = record_join(sem_id, game, getpid(), username, autoplay)) == TOO_MANY_PLAYERS_ERROR_CODE) {
+        errexit(TOO_MANY_PLAYERS_ERROR);
+    } else if (player_index == SAME_USERNAME_ERROR_CODE) {
+        errexit(SAME_USERNAME_ERROR);
+    } else if (player_index == AUTOPLAY_NOT_ALLOWED_ERROR_CODE) {
+        errexit(AUTOPLAY_NOT_ALLOWED_ERROR);
     }
 
-    autoPlay = game->autoplay;
+    // Set the local autoplay flag
+    autoplay = game->autoplay;
 
 #if DEBUG
     printf(SERVER_FOUND_SUCCESS, game->pids[SERVER]);
 #endif
 
+    // Register the dispose_memory function to be called at exit
     if (atexit(dispose_memory)) {
-        errExit(INITIALIZATION_ERROR);
+        errexit(INITIALIZATION_ERROR);
     }
 }
 
 void dispose_memory()
 {
-    // detachSharedMemory(gameId);
+    // detach_shared_memory(game_id);
 }
 
 void init_semaphores()
 {
-    semId = getSemaphores(N_SEM);
+    // Get the semaphores
+    sem_id = get_semaphores(N_SEM);
 }
 
 void init_signals()
 {
+    // Set the signals to handle
     sigset_t set;
     sigfillset(&set);
     sigdelset(&set, SIGINT);
@@ -206,27 +225,31 @@ void init_signals()
     sigdelset(&set, SIGALRM);
     sigprocmask(SIG_SETMASK, &set, NULL);
 
-    if (signal(SIGINT, exit_handler) == SIG_ERR || signal(SIGUSR1, serverQuitHandler) == SIG_ERR || signal(SIGUSR2, checkResults) == SIG_ERR || signal(SIGHUP, quitHandler) == SIG_ERR || signal(SIGTERM, exit_handler) == SIG_ERR) {
-        printError(INITIALIZATION_ERROR);
-        exit(EXIT_FAILURE);
+    // Register the signal handlers
+    if (signal(SIGINT, exit_handler) == SIG_ERR || signal(SIGUSR1, server_quit_handler) == SIG_ERR || signal(SIGUSR2, check_results) == SIG_ERR || signal(SIGHUP, quit_handler) == SIG_ERR || signal(SIGTERM, exit_handler) == SIG_ERR) {
+        errexit(INITIALIZATION_ERROR);
     }
 }
 
-void initTerminalSettings()
+void init_terminal_settings()
 {
-    if ((outputCustomizable = initOutputSettings(&withEcho, &withoutEcho))) {
-        setInput(&withoutEcho);
+    // Initialize the terminal settings: if possible, set the terminal to raw mode
+    if ((output_customizable = init_output_settings(&with_echo, &without_echo))) {
+        set_input(&without_echo);
     }
 
-    if (atexit(show_input)) {
-        printError(INITIALIZATION_ERROR);
+    // Register the show_input function to be called at exit
+    if (output_customizable && atexit(show_input)) {
+        print_error(INITIALIZATION_ERROR);
         exit(EXIT_FAILURE);
     }
 }
 
 void show_input()
 {
-    setInput(&withEcho);
+    // Restore the terminal settings
+    set_input(&with_echo);
+    print_and_flush(SHOW_CARET);
 
 #if DEBUG
     printf(OUTPUT_RESTORED_SUCCESS);
@@ -235,129 +258,149 @@ void show_input()
 
 void notify_player_ready()
 {
-    signalSemaphore(semId, WAIT_FOR_PLAYERS, 1);
+    // Tell the server a user arrived
+    signal_semaphore(sem_id, WAIT_FOR_PLAYERS, 1);
 }
 
 void notify_move()
 {
+    // Tell the server a user made a move
     cycles++;
-    signalSemaphore(semId, WAIT_FOR_MOVE, 1);
+    signal_semaphore(sem_id, WAIT_FOR_MOVE, 1);
 }
 
 void wait_for_opponent()
 {
-    if (autoPlay) {
+    // If the game is in autoplay mode, the opponent "always" is ready
+    if (autoplay != NONE) {
         return;
     }
 
-    printAndFlush(game->usernames[playerIndex - 1]);
-    printAndFlush(WAITING_FOR_OPPONENT_MESSAGE);
-    startLoadingSpinner(&spinnerTid);
+    // Show the waiting message
+    print_and_flush(game->usernames[player_index - 1]);
+    print_and_flush(WAITING_FOR_OPPONENT_MESSAGE);
+    start_loading_spinner(&spinner_tid);
 
+    // Wait for the opponent to be ready. If stopped by signal, retry
     do {
         errno = 0;
-        waitSemaphore(semId, WAIT_FOR_OPPONENT_READY, 1);
+        wait_semaphore(sem_id, WAIT_FOR_OPPONENT_READY, 1);
     } while (errno == EINTR);
 
-    stopLoadingSpinner(&spinnerTid);
-    printAndFlush(OPPONENT_READY_MESSAGE);
+    // When the opponent is ready, stop the spinner and print the message
+    stop_loading_spinner(&spinner_tid);
+    print_and_flush(OPPONENT_READY_MESSAGE);
     started = true;
 }
 
 void wait_for_move()
 {
+    // Wait for the opponent to make a move
     do {
         errno = 0;
-        waitSemaphore(semId, PLAYER_ONE_TURN + playerIndex - 1, 1);
+        wait_semaphore(sem_id, PLAYER_ONE_TURN + player_index - 1, 1);
     } while (errno == EINTR);
 
-    ignorePreviousInput();
+    // Flush the input buffer to prevent buffer overflow
+    ignore_previous_input();
 }
-
-void waitForResponse()
+void timeout_handler(int sig)
 {
-    do {
-        errno = 0;
-        waitSemaphore(semId, PLAYER_ONE_TURN + playerIndex - 1, 1);
-    } while (errno == EINTR);
-}
-
-void timeoutHandler(int sig)
-{
-    printMoveScreen();
+    // If the timeout expires, the player loses. This is achieved by simulating a quit signal
+    print_move_screen();
     printf(TIMEOUT_LOSS_MESSAGE);
-    quitHandler(sig);
+    quit_handler(sig);
     exit(EXIT_FAILURE);
 }
 
-void initTimeout()
+void init_timeout()
 {
+    // If the timeout is set to 0, do nothing
     if (game->timeout == 0) {
         return;
     }
 
+    // Set the timeout handler
     alarm(game->timeout);
-    signal(SIGALRM, timeoutHandler);
+    signal(SIGALRM, timeout_handler);
 
-    startTimeoutPrint(&timeoutTid, &game->timeout);
+    // Start the timeout print
+    start_timeout_print(&timeout_tid, &game->timeout);
 }
 
-void resetTimeout()
+void reset_timeout()
 {
+    // If the timeout is set to 0, do nothing
     if (game->timeout == 0) {
         return;
     }
 
+    // Reset the timeout
     alarm(0);
 }
 
-void askForInput()
+void ask_for_input()
 {
     char input[MOVE_INPUT_LEN];
 
-    show_input(withoutEcho);
+    // Restore the terminal settings
+    show_input(without_echo);
 
-    printSpaces((digits(game->timeout) + 3) * (game->timeout != 0));
+    // Print the input message shifting it to the right by the length of the timeout
+    print_spaces((digits(game->timeout) + 3) * (game->timeout != 0));
     printf(INPUT_A_MOVE_MESSAGE);
 
-    initTimeout();
+    // Initialize the timeout
+    init_timeout();
 
+    // Read the move
     scanf("%s", input);
     while (getchar() != '\n') // needed to prevent buffer overflow
         ;
 
     move_t move;
 
-    while (!isValidMove(game->matrix, input, &move)) {
-        firstCTRLCPressed = false; // reset firstCTRLCPressed if something else is inserted
+    // Check if the move is valid
+    while (!is_valid_move(game->matrix, input, &move)) {
+        first_CTRLC_pressed = false; // Reset firstCTRLCPressed if something else is inserted
 
-        printSpaces((digits(game->timeout) + 3) * (game->timeout != 0));
-        printError(INVALID_MOVE_ERROR);
+        // Print the error message and ask for a new move
+        print_spaces((digits(game->timeout) + 3) * (game->timeout != 0));
+        print_error(INVALID_MOVE_ERROR);
         scanf("%s", input);
     }
 
-    game->matrix[move.row + move.col * MATRIX_SIDE_LEN] = playerIndex;
+    // Update the matrix with the new move
+    game->matrix[move.row + move.col * MATRIX_SIDE_LEN] = player_index;
 
-    resetTimeout();
+    // Reset the timeout after move is made
+    reset_timeout();
 }
 
-void printMoveScreen()
+void print_move_screen()
 {
-    clearScreenClient();
-    printSymbol(game->symbols[playerIndex - 1], playerIndex, username);
-    printTimeout(game->timeout);
-    printBoard(game->matrix, game->symbols[0], game->symbols[1]);
+    clear_screen_client();
+
+    // Print the game symbols
+    print_symbol(game->symbols[player_index - 1], player_index, username);
+
+    // Print the timeout
+    print_timeout(game->timeout);
+
+    // Print the board
+    print_board(game->matrix, game->symbols[0], game->symbols[1]);
 }
 
-void checkResults(int sig)
+void check_results(int sig)
 {
-    printMoveScreen();
+    print_move_screen();
 
+    // Check the result of the game
     if (game->result == DRAW) {
         printf(DRAW_MESSAGE);
     } else if (game->result == QUIT) {
         printf(YOU_WON_FOR_QUIT_MESSAGE);
-    } else if (game->result != playerIndex) {
+    } else if (game->result != player_index) {
         printf(YOU_LOST_MESSAGE);
     } else {
         printf(YOU_WON_MESSAGE);
@@ -369,17 +412,18 @@ void checkResults(int sig)
 void exit_handler(int sig)
 {
     if (!started)
-        stopLoadingSpinner(&spinnerTid);
+        stop_loading_spinner(&spinner_tid);
 
-    if (firstCTRLCPressed) {
-        if (activePlayer || autoPlay == NONE)
-            kill(game->pids[SERVER], playerIndex == 1 ? SIGUSR1 : SIGUSR2);
+    // If the user presses CTRL+C twice, the client exits
+    if (first_CTRLC_pressed) {
+        if (active_player || autoplay == NONE)
+            kill(game->pids[SERVER], player_index == 1 ? SIGUSR1 : SIGUSR2);
 
         printf(CLOSING_MESSAGE);
         exit(EXIT_SUCCESS);
     }
 
-    firstCTRLCPressed = true;
+    first_CTRLC_pressed = true;
     printf(CTRLC_AGAIN_TO_QUIT_MESSAGE);
 
     if (started) {
@@ -389,14 +433,16 @@ void exit_handler(int sig)
     fflush(stdout);
 }
 
-void quitHandler(int sig)
+void quit_handler(int sig)
 {
-    if (activePlayer || autoPlay == NONE)
-        kill(game->pids[SERVER], playerIndex == 1 ? SIGUSR1 : SIGUSR2);
+    // Tell the server that the user quit
+    if (active_player || autoplay == NONE)
+        kill(game->pids[SERVER], player_index == 1 ? SIGUSR1 : SIGUSR2);
 }
 
-void serverQuitHandler(int sig)
+void server_quit_handler(int sig)
 {
+    // If the server quits, the client exits
     printf(SERVER_QUIT_MESSAGE);
     exit(EXIT_FAILURE);
 }

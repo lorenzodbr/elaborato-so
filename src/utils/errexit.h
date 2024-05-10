@@ -6,7 +6,7 @@
 
 #include "data.h"
 
-void errExit(const char* msg) {
+void errexit(const char* msg) {
     printf(FRED ERROR_CHAR "%s", msg);
 
 #if DEBUG

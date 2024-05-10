@@ -8,28 +8,28 @@
 #include <sys/shm.h>
 #include <sys/ipc.h>
 
-int getAndInitSharedMemory(int size, int id) {
-    int shmid = shmget(id, size, IPC_CREAT | PERM);
-    if (shmid < 0) {
-        errExit(SHARED_MEMORY_ALLOCATION_ERROR);
+int get_and_init_shared_memory(int size, int id) {
+    int shm_id = shmget(id, size, IPC_CREAT | PERM);
+    if (shm_id < 0) {
+        errexit(SHARED_MEMORY_ALLOCATION_ERROR);
     }
 
 #if DEBUG
-    printf(SHARED_MEMORY_OBTAINED_SUCCESS, shmid);
+    printf(SHARED_MEMORY_OBTAINED_SUCCESS, shm_id);
 #endif
 
-    return shmid;
+    return shm_id;
 }
 
-int getSharedMemory(int size, int id) {
-    int shmid = shmget(id, size, PERM);
+int get_shared_memory(int size, int id) {
+    int shm_id = shmget(id, size, PERM);
 
-    return shmid;
+    return shm_id;
 }
 
-void disposeSharedMemory(int shmid) {
-    if (shmctl(shmid, IPC_RMID, NULL) < 0) {
-        errExit(SHARED_MEMORY_DEALLOCATION_ERROR);
+void dispose_shared_memory(int shm_id) {
+    if (shmctl(shm_id, IPC_RMID, NULL) < 0) {
+        errexit(SHARED_MEMORY_DEALLOCATION_ERROR);
     }
 
 #if DEBUG
@@ -37,10 +37,10 @@ void disposeSharedMemory(int shmid) {
 #endif
 }
 
-void* attachSharedMemory(int shmid) {
-    void* addr = shmat(shmid, NULL, 0);
+void* attach_shared_memory(int shm_id) {
+    void* addr = shmat(shm_id, NULL, 0);
     if (addr == (void*)-1) {
-        errExit(SHARED_MEMORY_ATTACH_ERROR);
+        errexit(SHARED_MEMORY_ATTACH_ERROR);
     }
 
 #if DEBUG
@@ -50,15 +50,15 @@ void* attachSharedMemory(int shmid) {
     return addr;
 }
 
-void detachSharedMemory(void* addr) {
+void detach_shared_memory(void* addr) {
     if (shmdt(addr) < 0) {
-        errExit(SHARED_MEMORY_DETACH_ERROR);
+        errexit(SHARED_MEMORY_DETACH_ERROR);
     }
 }
 
-bool areThereAttachedProcesses() {
+bool are_there_attached_processes() {
     // check if there are attached processes by checking
     // if the shared memory is obtainable without creating it
     // (only the first server is capable of this)
-    return getSharedMemory(0, GAME_ID) > -1;
+    return get_shared_memory(0, GAME_ID) > -1;
 }

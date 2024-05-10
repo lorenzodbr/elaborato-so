@@ -1,15 +1,15 @@
 /************************************
-* VR487434 - Lorenzo Di Berardino
-* VR486588 - Filippo Milani
-* 09/05/2024
-*************************************/
+ * VR487434 - Lorenzo Di Berardino
+ * VR486588 - Filippo Milani
+ * 09/05/2024
+ *************************************/
 
 #include <errno.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
 #include <sys/types.h>
 
-#include "../errExit.h"
+#include "../errexit.h"
 
 #ifndef SEMUN_H
 #define SEMUN_H
@@ -20,18 +20,19 @@ union semun {
 };
 #endif
 
-int getSemaphores(int nsems);
-void setSemaphore(int semid, int semnum, int value);
-void setSemaphores(int semid, int nsems, short unsigned* values);
-void disposeSemaphore(int semid);
-void waitSemaphore(int semid, int semnum, int value);
-void signalSemaphore(int semid, int semnum, int value);
+int get_semaphores(int);
+void set_semaphore(int, int, int);
+void set_semaphores(int, int, short unsigned*);
+void dispose_semaphore(int);
+void wait_semaphore(int, int, int);
+void signal_semaphore(int, int, int);
 
-int getSemaphores(int nsems) {
-    int semId = semget(SEM_ID, nsems, IPC_CREAT | PERM);
-    if (semId < 0) {
+int get_semaphores(int n_sems)
+{
+    int sem_id = semget(SEM_ID, n_sems, IPC_CREAT | PERM);
+    if (sem_id < 0) {
 #if DEBUG
-        errExit(SEMAPHORE_INITIALIZATION_ERROR);
+        errexit(SEMAPHORE_INITIALIZATION_ERROR);
 #else
         exit(EXIT_FAILURE);
 #endif
@@ -41,13 +42,14 @@ int getSemaphores(int nsems) {
     printf(SEMAPHORE_OBTAINED_SUCCESS);
 #endif
 
-    return semId;
+    return sem_id;
 }
 
-void setSemaphore(int semid, int semnum, int value) {
-    if (semctl(semid, semnum, SETVAL, value) < 0) {
+void set_semaphore(int sem_id, int sem_num, int value)
+{
+    if (semctl(sem_id, sem_num, SETVAL, value) < 0) {
 #if DEBUG
-        errExit(SEMAPHORE_INITIALIZATION_ERROR);
+        errexit(SEMAPHORE_INITIALIZATION_ERROR);
 #else
         exit(EXIT_FAILURE);
 #endif
@@ -58,13 +60,14 @@ void setSemaphore(int semid, int semnum, int value) {
 #endif
 }
 
-void setSemaphores(int semid, int nsems, short unsigned* values) {
+void set_semaphores(int sem_id, int n_sems, short unsigned* values)
+{
     union semun arg;
     arg.array = values;
 
-    if (semctl(semid, 0, SETALL, arg) < 0) {
+    if (semctl(sem_id, 0, SETALL, arg) < 0) {
 #if DEBUG
-        errExit(SEMAPHORE_INITIALIZATION_ERROR);
+        errexit(SEMAPHORE_INITIALIZATION_ERROR);
 #else
         exit(EXIT_FAILURE);
 #endif
@@ -75,10 +78,11 @@ void setSemaphores(int semid, int nsems, short unsigned* values) {
 #endif
 }
 
-void disposeSemaphore(int semid) {
-    if (semctl(semid, 0, IPC_RMID) < 0) {
+void dispose_semaphore(int sem_id)
+{
+    if (semctl(sem_id, 0, IPC_RMID) < 0) {
 #if DEBUG
-        errExit(SEMAPHORE_DEALLOCATION_ERROR);
+        errexit(SEMAPHORE_DEALLOCATION_ERROR);
 #else
         exit(EXIT_FAILURE);
 #endif
@@ -89,29 +93,31 @@ void disposeSemaphore(int semid) {
 #endif
 }
 
-void waitSemaphore(int semid, int semnum, int value) {
+void wait_semaphore(int sem_id, int sem_num, int value)
+{
     if (value > 0)
         value *= -1;
 
-    struct sembuf sops = { semnum, value, 0 };
+    struct sembuf sops = { sem_num, value, 0 };
 
-    int semopRet = semop(semid, &sops, 1);
-    if (semopRet < 0 && (errno != EINTR && errno != EIDRM)) {
+    int semop_ret = semop(sem_id, &sops, 1);
+    if (semop_ret < 0 && (errno != EINTR && errno != EIDRM)) {
 #if DEBUG
-        errExit(SEMAPHORE_WAITING_ERROR);
+        errexit(SEMAPHORE_WAITING_ERROR);
 #else
         exit(EXIT_FAILURE);
 #endif
     }
 }
 
-void signalSemaphore(int semid, int semnum, int value) {
-    struct sembuf sops = { semnum, value, 0 };
+void signal_semaphore(int sem_id, int sem_num, int value)
+{
+    struct sembuf sops = { sem_num, value, 0 };
 
-    int semopRet = semop(semid, &sops, 1);
-    if (semopRet < 0 && (errno != EINTR || errno != EIDRM)) {
+    int semop_ret = semop(sem_id, &sops, 1);
+    if (semop_ret < 0 && (errno != EINTR || errno != EIDRM)) {
 #if DEBUG
-        errExit(SEMAPHORE_SIGNALING_ERROR);
+        errexit(SEMAPHORE_SIGNALING_ERROR);
 #else
         exit(EXIT_FAILURE);
 #endif
