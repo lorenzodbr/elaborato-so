@@ -17,7 +17,7 @@
 #define N_ARGS_SERVER 3
 #define N_ARGS_CLIENT 2
 
-// ----------------- COLORS ------------------
+// ----------------- COLORS -----------------
 
 #define CLEAR_SCREEN "\033[H\033[J"
 #define HIDE_CARET "\33[?25l"

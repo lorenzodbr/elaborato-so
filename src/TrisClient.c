@@ -143,6 +143,7 @@ int main(int argc, char* argv[])
     return EXIT_SUCCESS;
 }
 
+/// @brief Initializes the client
 void init()
 {
     // Print the welcome message
@@ -162,6 +163,7 @@ void init()
     print_loading_complete_message();
 }
 
+/// @brief Initializes the shared memory
 void init_shared_memory()
 {
     // Get the shared memory without creating it
@@ -201,17 +203,20 @@ void init_shared_memory()
     }
 }
 
+/// @brief Disposes the shared memory
 void dispose_memory()
 {
     detach_shared_memory(game);
 }
 
+/// @brief Initializes the semaphores
 void init_semaphores()
 {
     // Get the semaphores
     sem_id = get_semaphores(N_SEM);
 }
 
+/// @brief Initializes the signals
 void init_signals()
 {
     // Set the signals to handle
@@ -235,6 +240,7 @@ void init_signals()
     }
 }
 
+/// @brief Initializes the terminal settings
 void init_terminal_settings()
 {
     // Initialize the terminal settings: if possible, set the terminal to raw mode
@@ -249,6 +255,7 @@ void init_terminal_settings()
     }
 }
 
+/// @brief Sets the terminal to show the input
 void show_input()
 {
     // Restore the terminal settings
@@ -260,12 +267,14 @@ void show_input()
 #endif
 }
 
+/// @brief Notifies the server that the player is ready
 void notify_player_ready()
 {
     // Tell the server a user arrived
     signal_semaphore(sem_id, WAIT_FOR_PLAYERS, 1);
 }
 
+/// @brief Notifies the server that the player made a move
 void notify_move()
 {
     // Tell the server a user made a move
@@ -273,6 +282,7 @@ void notify_move()
     signal_semaphore(sem_id, WAIT_FOR_MOVE, 1);
 }
 
+/// @brief Waits for the opponent to be ready
 void wait_for_opponent()
 {
     // If the game is in autoplay mode, the opponent "always" is ready
@@ -297,6 +307,7 @@ void wait_for_opponent()
     started = true;
 }
 
+/// @brief Waits for the opponent to make a move
 void wait_for_move()
 {
     // Wait for the opponent to make a move
@@ -308,6 +319,8 @@ void wait_for_move()
     // Flush the input buffer to prevent buffer overflow
     ignore_previous_input();
 }
+
+/// @brief Handles the timeout expiration
 void timeout_handler(int sig)
 {
     // If the timeout expires, the player loses. This is achieved by simulating a quit signal
@@ -317,6 +330,7 @@ void timeout_handler(int sig)
     exit(EXIT_FAILURE);
 }
 
+/// @brief Initializes the timeout based on the game settings
 void init_timeout()
 {
     // If the timeout is set to 0, do nothing
@@ -332,6 +346,7 @@ void init_timeout()
     start_timeout_print(&timeout_tid, &game->timeout);
 }
 
+/// @brief Stops the timeout
 void reset_timeout()
 {
     // If the timeout is set to 0, do nothing
@@ -343,6 +358,7 @@ void reset_timeout()
     alarm(0);
 }
 
+/// @brief Asks the player for a move
 void ask_for_input()
 {
     char input[MOVE_INPUT_LEN];
@@ -381,6 +397,7 @@ void ask_for_input()
     reset_timeout();
 }
 
+/// @brief Prints the board before and after a move
 void print_move_screen()
 {
     clear_screen_client();
@@ -395,6 +412,7 @@ void print_move_screen()
     print_board(game->matrix, game->symbols[0], game->symbols[1]);
 }
 
+/// @brief Checks the results of the game
 void check_results(int sig)
 {
     print_move_screen();
@@ -413,6 +431,7 @@ void check_results(int sig)
     exit(EXIT_SUCCESS);
 }
 
+/// @brief Handles the player controlled exit
 void exit_handler(int sig)
 {
     if (!started)
@@ -437,6 +456,7 @@ void exit_handler(int sig)
     fflush(stdout);
 }
 
+/// @brief Handles the player sudden quit
 void quit_handler(int sig)
 {
     // Tell the server that the user quit
@@ -444,6 +464,7 @@ void quit_handler(int sig)
         kill(game->pids[SERVER], player_index == 1 ? SIGUSR1 : SIGUSR2);
 }
 
+/// @brief Handles the server quit
 void server_quit_handler(int sig)
 {
     // If the server quits, the client exits
