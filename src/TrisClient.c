@@ -363,7 +363,7 @@ void exitHandler(int sig) {
         stopLoadingSpinner(&spinnerTid);
 
     if (firstCTRLCPressed) {
-        if (activePlayer)
+        if (activePlayer || autoPlay == NONE)
             kill(game->pids[SERVER], playerIndex == 1 ? SIGUSR1 : SIGUSR2);
 
         printf(CLOSING_MESSAGE);
@@ -381,7 +381,7 @@ void exitHandler(int sig) {
 }
 
 void quitHandler(int sig) {
-    if (activePlayer)
+    if (activePlayer || autoPlay == NONE)
         kill(game->pids[SERVER], playerIndex == 1 ? SIGUSR1 : SIGUSR2);
 }
 
