@@ -1,16 +1,16 @@
 /************************************
-* VR487434 - Lorenzo Di Berardino
-* VR486588 - Filippo Milani
-* 09/05/2024
-*************************************/
+ * VR487434 - Lorenzo Di Berardino
+ * VR486588 - Filippo Milani
+ * 09/05/2024
+ *************************************/
 
+#include <limits.h>
 #include <pthread.h>
-#include <unistd.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <termios.h>
-#include <limits.h>
-#include <stdbool.h>
+#include <unistd.h>
 
 #include "semaphores/semaphores.h"
 
@@ -29,29 +29,34 @@ typedef struct {
     int timeout;
 } tris_game_t;
 
-void printHeaderServer() {
+void printHeaderServer()
+{
     printf(CLEAR_SCREEN);
     printf(TRIS_ASCII_ART_SERVER);
 }
 
-void printHeaderClient() {
+void printHeaderClient()
+{
     printf(CLEAR_SCREEN);
     printf(BOLD FCYN TRIS_ASCII_ART_CLIENT NO_BOLD FNRM);
 }
 
-void printWelcomeMessageServer() {
+void printWelcomeMessageServer()
+{
     printHeaderServer();
     printf(CREDITS);
     printf(NO_BOLD FNRM);
 }
 
-void printWelcomeMessageClient(char* username) {
+void printWelcomeMessageClient(char* username)
+{
     printHeaderClient();
     printf(CREDITS);
     printf(WELCOME_CLIENT_MESSAGE, username);
 }
 
-void printLoadingMessage() {
+void printLoadingMessage()
+{
     printf(LOADING_MESSAGE FGRN);
 
 #if DEBUG
@@ -59,12 +64,14 @@ void printLoadingMessage() {
 #endif
 }
 
-void printAndFlush(const char* msg) {
+void printAndFlush(const char* msg)
+{
     printf("%s", msg);
     fflush(stdout);
 }
 
-void* loadingSpinner() {
+void* loadingSpinner()
+{
     while (1) {
         printAndFlush("\b|");
         usleep(100000);
@@ -79,11 +86,13 @@ void* loadingSpinner() {
     return NULL;
 }
 
-void startLoadingSpinner(pthread_t* tid) {
+void startLoadingSpinner(pthread_t* tid)
+{
     pthread_create(tid, NULL, loadingSpinner, NULL);
 }
 
-void stopLoadingSpinner(pthread_t* tid) {
+void stopLoadingSpinner(pthread_t* tid)
+{
     if (*tid != 0) {
         pthread_cancel(*tid);
         printAndFlush("\b \b");
@@ -91,7 +100,8 @@ void stopLoadingSpinner(pthread_t* tid) {
     }
 }
 
-int digits(int n) {
+int digits(int n)
+{
     if (n < 0)
         return digits((n == INT_MIN) ? INT_MAX : -n);
     if (n < 10)
@@ -99,7 +109,8 @@ int digits(int n) {
     return 1 + digits(n / 10);
 }
 
-void printSpaces(int n) {
+void printSpaces(int n)
+{
     for (int i = 0; i < n; i++) {
         printf(" ");
     }
@@ -107,7 +118,8 @@ void printSpaces(int n) {
     fflush(stdout);
 }
 
-void* timeoutPrintHandler(void* timeout) {
+void* timeoutPrintHandler(void* timeout)
+{
     int timeoutValue = *(int*)timeout;
     int originalDigits = digits(timeoutValue) + (timeoutValue % 10 != 0), newDigits;
 
@@ -124,11 +136,13 @@ void* timeoutPrintHandler(void* timeout) {
     return NULL;
 }
 
-void startTimeoutPrint(pthread_t* tid, int* timeout) {
+void startTimeoutPrint(pthread_t* tid, int* timeout)
+{
     pthread_create(tid, NULL, timeoutPrintHandler, timeout);
 }
 
-void stopTimeoutPrint(pthread_t tid) {
+void stopTimeoutPrint(pthread_t tid)
+{
     if (tid == 0) {
         return;
     }
@@ -136,15 +150,18 @@ void stopTimeoutPrint(pthread_t tid) {
     pthread_cancel(tid);
 }
 
-int setInput(struct termios* policy) {
+int setInput(struct termios* policy)
+{
     return tcsetattr(STDOUT_FILENO, TCSANOW, policy);
 }
 
-void ignorePreviousInput() {
+void ignorePreviousInput()
+{
     tcflush(STDIN_FILENO, TCIFLUSH);
 }
 
-bool initOutputSettings(struct termios* withEcho, struct termios* withoutEcho) {
+bool initOutputSettings(struct termios* withEcho, struct termios* withoutEcho)
+{
     if (tcgetattr(STDOUT_FILENO, withEcho) != 0) {
         return false;
     }
@@ -155,11 +172,13 @@ bool initOutputSettings(struct termios* withEcho, struct termios* withoutEcho) {
     return true;
 }
 
-void printLoadingCompleteMessage() {
+void printLoadingCompleteMessage()
+{
     printf(LOADING_COMPLETE_MESSAGE);
 }
 
-void initBoard(int* matrix) {
+void initBoard(int* matrix)
+{
     for (int i = 0; i < MATRIX_SIDE_LEN; i++) {
         for (int j = 0; j < MATRIX_SIDE_LEN; j++) {
             matrix[i * MATRIX_SIDE_LEN + j] = 0;
@@ -171,7 +190,8 @@ void initBoard(int* matrix) {
 #endif
 }
 
-void printBoard(int* matrix, char playerOneSymbol, char playerTwoSymbol) {
+void printBoard(int* matrix, char playerOneSymbol, char playerTwoSymbol)
+{
     int cell;
 
     printf(MATRIX_TOP_ROW);
@@ -204,42 +224,50 @@ void printBoard(int* matrix, char playerOneSymbol, char playerTwoSymbol) {
     printf("\n\n");
 }
 
-void printSymbol(char symbol, int playerIndex, char* username) {
+void printSymbol(char symbol, int playerIndex, char* username)
+{
     printf(YOUR_SYMBOL_IS_MESSAGE, username, playerIndex == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR, symbol);
 }
 
-void printTimeout(int timeout) {
+void printTimeout(int timeout)
+{
     printf(INFO_CHAR);
     printf(timeout == 0 ? INFINITE_TIMEOUT_MESSAGE : TIMEOUT_MESSAGE, timeout);
 }
 
-void printError(const char* msg) {
+void printError(const char* msg)
+{
     printAndFlush(FRED ERROR_CHAR);
     printAndFlush(msg);
     printAndFlush(FNRM);
 }
 
-void clearScreenServer() {
+void clearScreenServer()
+{
     printHeaderServer();
 }
 
-void clearScreenClient() {
+void clearScreenClient()
+{
     printHeaderClient();
 }
 
-void printSuccess(const char* msg) {
+void printSuccess(const char* msg)
+{
     printAndFlush(FGRN SUCCESS_CHAR);
     printAndFlush(msg);
 }
 
-void initPids(int* pidsPointer) {
+void initPids(int* pidsPointer)
+{
     for (int i = 0; i < 3; i++) {
         pidsPointer[i] = 0;
     }
 }
 
 // set specified pid to the first empty slot (out of 3)
-int recordJoin(tris_game_t* game, int pid, char* username, int autoPlay) {
+int recordJoin(tris_game_t* game, int pid, char* username, int autoPlay)
+{
     int semId = getSemaphores(N_SEM), playerIndex = TOO_MANY_PLAYERS_ERROR_CODE;
 
     waitSemaphore(semId, PID_LOCK, 1);
@@ -268,7 +296,8 @@ int recordJoin(tris_game_t* game, int pid, char* username, int autoPlay) {
     return playerIndex;
 }
 
-void setPidAt(int* pidsPointer, int index, int pid) {
+void setPidAt(int* pidsPointer, int index, int pid)
+{
     int semId = getSemaphores(N_SEM);
 
     waitSemaphore(semId, PID_LOCK, 1);
@@ -276,7 +305,8 @@ void setPidAt(int* pidsPointer, int index, int pid) {
     signalSemaphore(semId, PID_LOCK, 1);
 }
 
-void recordQuit(tris_game_t* game, int index) {
+void recordQuit(tris_game_t* game, int index)
+{
     int semId = getSemaphores(N_SEM);
 
     waitSemaphore(semId, PID_LOCK, 1);
@@ -285,20 +315,20 @@ void recordQuit(tris_game_t* game, int index) {
     signalSemaphore(semId, PID_LOCK, 1);
 }
 
-int getPid(int* pidsPointer, int index) {
+int getPid(int* pidsPointer, int index)
+{
     return pidsPointer[index];
 }
 
-bool isValidMove(int* matrix, char* input, move_t* move) {
+bool isValidMove(int* matrix, char* input, move_t* move)
+{
     // the input is valid if it is in the format [A-C or a-c],[1-3]
 
     if (strlen(input) != 2) {
         return false;
     }
 
-    if (((input[0] < 'A' || input[0] > 'C') &&
-        (input[0] < 'a' || input[0] > 'c')) ||
-        input[1] < '1' || input[1] > '3') {
+    if (((input[0] < 'A' || input[0] > 'C') && (input[0] < 'a' || input[0] > 'c')) || input[1] < '1' || input[1] > '3') {
         return false;
     }
 
@@ -317,34 +347,28 @@ bool isValidMove(int* matrix, char* input, move_t* move) {
     return true;
 }
 
-int isGameEnded(int* matrix) {
+int isGameEnded(int* matrix)
+{
     // check rows
     for (int i = 0; i < MATRIX_SIDE_LEN; i++) {
-        if (matrix[i * MATRIX_SIDE_LEN] != 0 &&
-            matrix[i * MATRIX_SIDE_LEN] == matrix[i * MATRIX_SIDE_LEN + 1] &&
-            matrix[i * MATRIX_SIDE_LEN] == matrix[i * MATRIX_SIDE_LEN + 2]) {
+        if (matrix[i * MATRIX_SIDE_LEN] != 0 && matrix[i * MATRIX_SIDE_LEN] == matrix[i * MATRIX_SIDE_LEN + 1] && matrix[i * MATRIX_SIDE_LEN] == matrix[i * MATRIX_SIDE_LEN + 2]) {
             return matrix[i * MATRIX_SIDE_LEN];
         }
     }
 
     // check columns
     for (int i = 0; i < MATRIX_SIDE_LEN; i++) {
-        if (matrix[i] != 0 && matrix[i] == matrix[i + MATRIX_SIDE_LEN] &&
-            matrix[i] == matrix[i + 2 * MATRIX_SIDE_LEN]) {
+        if (matrix[i] != 0 && matrix[i] == matrix[i + MATRIX_SIDE_LEN] && matrix[i] == matrix[i + 2 * MATRIX_SIDE_LEN]) {
             return matrix[i];
         }
     }
 
     // check diagonals
-    if (matrix[0] != 0 &&
-        matrix[0] == matrix[4] &&
-        matrix[0] == matrix[8]) {
+    if (matrix[0] != 0 && matrix[0] == matrix[4] && matrix[0] == matrix[8]) {
         return matrix[0];
     }
 
-    if (matrix[2] != 0 &&
-        matrix[2] == matrix[4] &&
-        matrix[2] == matrix[6]) {
+    if (matrix[2] != 0 && matrix[2] == matrix[4] && matrix[2] == matrix[6]) {
         return matrix[2];
     }
 
@@ -358,18 +382,41 @@ int isGameEnded(int* matrix) {
     return DRAW;
 }
 
-int max(int a, int b) {
+int max(int a, int b)
+{
     return a > b ? a : b;
 }
 
-int min(int a, int b) {
+int min(int a, int b)
+{
     return a < b ? a : b;
 }
 
-int minimax(int* gameMatrix, int depth, bool isMaximizing) {
+/*
+    minimax() {
+        if (game is over in current state) {
+            return 1 : -1
+        }
+
+        for (each move) : {
+            if (move is valid) {
+                make move
+                bestVal = max(bestVal, minimax())
+                undo move
+            }
+
+        }
+
+        return bestVal
+    }
+*/
+
+int minimax(int* gameMatrix, int depth, bool isMaximizing)
+{
     int result = isGameEnded(gameMatrix);
 
-    if (result == DRAW) return DRAW;
+    if (result == DRAW)
+        return DRAW;
 
     if (result != NOT_FINISHED) {
         return result == PLAYER_TWO ? 1 : -1;
@@ -387,8 +434,7 @@ int minimax(int* gameMatrix, int depth, bool isMaximizing) {
         }
 
         return bestVal;
-    }
-    else {
+    } else {
         int bestVal = INT_MAX;
 
         for (int i = 0; i < MATRIX_SIZE; i++) {
@@ -403,8 +449,9 @@ int minimax(int* gameMatrix, int depth, bool isMaximizing) {
     }
 }
 
-//uses minimax to choose the next best move
-void chooseBestMove(int* gameMatrix, int playerIndex) {
+// uses minimax to choose the next best move
+void chooseBestMove(int* gameMatrix, int playerIndex)
+{
     int bestVal = INT_MIN;
     move_t bestMove;
 
@@ -425,35 +472,35 @@ void chooseBestMove(int* gameMatrix, int playerIndex) {
     gameMatrix[bestMove.row + bestMove.col * MATRIX_SIDE_LEN] = playerIndex;
 }
 
-void chooseRandomMove(int* gameMatrix, int playerIndex) {
+void chooseRandomMove(int* gameMatrix, int playerIndex)
+{
     int randomIndex;
 
     do {
-        randomIndex = rand() % MATRIX_SIZE;
+        randomIndex = rand() % (MATRIX_SIZE);
     } while (gameMatrix[randomIndex] != 0);
-
     gameMatrix[randomIndex] = playerIndex;
 }
 
-
-void chooseRandomOrBestMove(int* gameMatrix, int playerIndex, int cycles) {
-    if (cycles % 2 == 0)
+void chooseRandomOrBestMove(int* gameMatrix, int playerIndex, int cycles)
+{
+    if (cycles % 2 != 0)
         chooseBestMove(gameMatrix, playerIndex);
     else
         chooseRandomMove(gameMatrix, playerIndex);
-
 }
 
-void chooseNextMove(int *gameMatrix, int difficulty, int playerIndex, int cycles){
-    switch(difficulty){
-        case EASY:
-            chooseRandomMove(gameMatrix, playerIndex);
-            break;
-        case MEDIUM:
-            chooseRandomOrBestMove(gameMatrix, playerIndex, cycles);
-            break;
-        case HARD:
-            chooseBestMove(gameMatrix, playerIndex);
-            break;
+void chooseNextMove(int* gameMatrix, int difficulty, int playerIndex, int cycles)
+{
+    switch (difficulty) {
+    case EASY:
+        chooseRandomMove(gameMatrix, playerIndex);
+        break;
+    case MEDIUM:
+        chooseRandomOrBestMove(gameMatrix, playerIndex, cycles);
+        break;
+    case HARD:
+        chooseBestMove(gameMatrix, playerIndex);
+        break;
     }
 }

@@ -98,7 +98,7 @@
 
 // Sizes
 #define MATRIX_SIDE_LEN 3
-#define MATRIX_SIZE MATRIX_SIDE_LEN *MATRIX_SIDE_LEN
+#define MATRIX_SIZE (MATRIX_SIDE_LEN * MATRIX_SIDE_LEN)
 #define GAME_SIZE sizeof(tris_game_t)
 #define MOVE_INPUT_LEN 20
 #define PID_ARRAY_LEN 3

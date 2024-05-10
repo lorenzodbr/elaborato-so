@@ -1,42 +1,42 @@
 /************************************
-* VR487434 - Lorenzo Di Berardino
-* VR486588 - Filippo Milani
-* 09/05/2024
-*************************************/
+ * VR487434 - Lorenzo Di Berardino
+ * VR486588 - Filippo Milani
+ * 09/05/2024
+ *************************************/
 
+#include <errno.h>
+#include <signal.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <stdbool.h>
-#include <signal.h>
-#include <errno.h>
 #include <time.h>
+#include <unistd.h>
 
 #include "utils/data.h"
 #include "utils/globals.h"
 #include "utils/shared_memory/shared_memory.h"
 
-void parseArgs(int argc, char* argv[]);
+void parse_args(int, char**);
 void init();
-void initTerminal();
-void initSharedMemory();
-void initSemaphores();
-void waitForPlayers();
-void disposeMemory();
-void disposeSemaphores();
-void initSignals();
-void notifyOpponentReady();
-void notifyPlayerWhoWonForQuit(int playerWhoWon);
-void notifyGameEnded();
-void notifyServerQuit();
-void exitHandler(int sig);
-void playerQuitHandler(int sig);
-void waitForMove();
-void notifyNextMove();
-void printGameSettings();
-void serverQuit(int sig);
-void showInput();
-void printResult();
+void init_terminal();
+void init_shared_memory();
+void init_semaphores();
+void wait_for_players();
+void dispose_memory();
+void dispose_semaphores();
+void init_signals();
+void notify_opponent_ready();
+void notify_player_who_won_for_quit(int);
+void notify_name_ended();
+void notify_server_quit();
+void exit_handler(int);
+void player_quit_handler(int);
+void wait_for_move();
+void notify_next_move();
+void print_game_settings();
+void server_quit(int);
+void show_input();
+void print_result();
 
 // Shared memory
 tris_game_t* game = NULL;
@@ -52,33 +52,36 @@ int turn = INITIAL_TURN;
 int playersCount = 0;
 
 // Terminal settings
-struct termios withEcho, withoutEcho;
+struct termios withEcho,
+    withoutEcho;
 bool outputCustomizable = true;
 pthread_t spinnerTid = 0;
 
 // TODO: handle if IPCs with the same key are already present
 
-int main(int argc, char* argv[]) {
+int main(int argc, char* argv[])
+{
     if (argc != N_ARGS_SERVER + 1) {
         errExit(USAGE_ERROR_SERVER);
     }
-
     // Initialization
     init();
-    parseArgs(argc, argv);
+    parse_args(argc, argv);
 
     // Show game settings
-    printGameSettings();
+    print_game_settings();
 
     // Waiting for other players
-    waitForPlayers();
+    wait_for_players();
 
     // If the server is here, it means that both players are connected...
-    notifyOpponentReady();
+    notify_opponent_ready();
 
     // ...and game can start
     started = true;
-    printf(STARTS_PLAYER_MESSAGE, INITIAL_TURN == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR, turn, game->usernames[turn]);
+    printf(STARTS_PLAYER_MESSAGE,
+        INITIAL_TURN == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR, turn,
+        game->usernames[turn]);
 
     // Game loop
     while ((game->result = isGameEnded(game->matrix)) == NOT_FINISHED) {
@@ -88,22 +91,23 @@ int main(int argc, char* argv[]) {
         printf(NEWLINE);
 #endif
         // Wait for move
-        waitForMove();
+        wait_for_move();
 
         // Notify the next player
-        notifyNextMove();
+        notify_next_move();
     }
 
     // If the game is ended (i.e. no more in the loop), print the result
-    printResult();
+    print_result();
 
     // Notify the player(s) still connected that the game is ended
-    notifyGameEnded();
+    notify_name_ended();
 
     exit(EXIT_SUCCESS);
 }
 
-void parseArgs(int argc, char* argv[]) {
+void parse_args(int argc, char* argv[])
+{
     // Parsing timeout
     char* endptr;
     game->timeout = strtol(argv[1], &endptr, 10);
@@ -114,7 +118,6 @@ void parseArgs(int argc, char* argv[]) {
     if (game->timeout < MINIMUM_TIMEOUT && game->timeout != 0) {
         errExit(TIMEOUT_TOO_LOW_ERROR);
     }
-
     // Parsing symbols
     if (strlen(argv[2]) != 1 || strlen(argv[3]) != 1) {
         errExit(SYMBOLS_LENGTH_ERROR);
@@ -128,7 +131,8 @@ void parseArgs(int argc, char* argv[]) {
     }
 }
 
-void init() {
+void init()
+{
     // Startup messages
     printWelcomeMessageServer();
     printLoadingMessage();
@@ -137,39 +141,40 @@ void init() {
     if (areThereAttachedProcesses(gameId)) {
         errExit(SERVER_ALREADY_RUNNING_ERROR);
     }
-
     // Terminal settings
-    initTerminal();
+    init_terminal();
 
     // Data structures
-    initSemaphores();
-    initSharedMemory();
+    init_semaphores();
+    init_shared_memory();
 
-    // Dispose memory and semaphores at exit only if clients have already quitted
+    // Dispose memory and semaphores at exit only if clients have already
+    // quitted
     // if (atexit(waitOkToDispose))
     // {
-    //     errExit(INITIALIZATION_ERROR);
+    // errExit(INITIALIZATION_ERROR);
     // }
 
-    initSignals();
+    init_signals();
 
     // Loading complete
     printLoadingCompleteMessage();
 }
 
-void printGameSettings() {
+void print_game_settings()
+{
     printAndFlush(GAME_SETTINGS_MESSAGE);
     if (game->timeout == 0) {
         printAndFlush(INFINITE_TIMEOUT_SETTINGS_MESSAGE);
-    }
-    else {
+    } else {
         printf(TIMEOUT_SETTINGS_MESSAGE, game->timeout);
     }
     printf(PLAYER_ONE_SYMBOL_SETTINGS_MESSAGE, game->symbols[0]);
     printf(PLAYER_TWO_SYMBOL_SETTINGS_MESSAGE, game->symbols[1]);
 }
 
-void printResult() {
+void print_result()
+{
     printAndFlush(FINAL_STATE_MESSAGE);
     printBoard(game->matrix, game->symbols[0], game->symbols[1]);
 
@@ -179,30 +184,33 @@ void printResult() {
         break;
     case 1:
     case 2:
-        printf(WINS_PLAYER_MESSAGE, game->result == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR,
+        printf(WINS_PLAYER_MESSAGE,
+            game->result == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR,
             game->result, game->usernames[game->result]);
         break;
     }
 }
 
-void initTerminal() {
+void init_terminal()
+{
     if ((outputCustomizable = initOutputSettings(&withEcho, &withoutEcho))) {
         setInput(&withoutEcho);
         printAndFlush(HIDE_CARET);
 
-        if (atexit(showInput)) {
+        if (atexit(show_input)) {
             printError(INITIALIZATION_ERROR);
             exit(EXIT_FAILURE);
         }
     }
 }
 
-void initSharedMemory() {
+void init_shared_memory()
+{
     gameId = getAndInitSharedMemory(GAME_SIZE, GAME_ID);
 
     game = (tris_game_t*)attachSharedMemory(gameId);
 
-    if (atexit(disposeMemory)) {
+    if (atexit(dispose_memory)) {
         errExit(INITIALIZATION_ERROR);
     }
 
@@ -212,12 +220,14 @@ void initSharedMemory() {
     setPidAt(game->pids, 0, getpid());
 }
 
-void disposeMemory() {
+void dispose_memory()
+{
     disposeSharedMemory(gameId);
     detachSharedMemory(game);
 }
 
-void initSemaphores() {
+void init_semaphores()
+{
     semId = getSemaphores(N_SEM);
 
     short unsigned values[N_SEM];
@@ -230,18 +240,20 @@ void initSemaphores() {
 
     setSemaphores(semId, N_SEM, values);
 
-    if (atexit(disposeSemaphores)) {
+    if (atexit(dispose_semaphores)) {
         printError(INITIALIZATION_ERROR);
         exit(EXIT_FAILURE);
     }
 }
 
-void disposeSemaphores() {
+void dispose_semaphores()
+{
     if (semId != -1)
         disposeSemaphore(semId);
 }
 
-void showInput() {
+void show_input()
+{
     setInput(&withEcho);
     ignorePreviousInput();
     printAndFlush(SHOW_CARET);
@@ -251,7 +263,8 @@ void showInput() {
 #endif
 }
 
-void initSignals() {
+void init_signals()
+{
     sigset_t set;
     sigfillset(&set);
     sigdelset(&set, SIGINT);
@@ -261,40 +274,44 @@ void initSignals() {
     sigdelset(&set, SIGUSR2);
     sigprocmask(SIG_SETMASK, &set, NULL);
 
-    if (signal(SIGINT, exitHandler) == SIG_ERR ||
-        signal(SIGTERM, exitHandler) == SIG_ERR ||
-        signal(SIGHUP, serverQuit) == SIG_ERR ||
-        signal(SIGUSR1, playerQuitHandler) == SIG_ERR ||
-        signal(SIGUSR2, playerQuitHandler) == SIG_ERR) {
+    if (signal(SIGINT, exit_handler) == SIG_ERR
+        || signal(SIGTERM, exit_handler) == SIG_ERR
+        || signal(SIGHUP, server_quit) == SIG_ERR
+        || signal(SIGUSR1, player_quit_handler) == SIG_ERR
+        || signal(SIGUSR2, player_quit_handler) == SIG_ERR) {
         printError(INITIALIZATION_ERROR);
         exit(EXIT_FAILURE);
     }
 }
 
-void serverQuit(int sig) {
+void server_quit(int sig)
+{
     printf(CLOSING_MESSAGE);
-    notifyServerQuit();
+    notify_server_quit();
     exit(EXIT_SUCCESS);
 }
 
-void exitHandler(int sig) {
+void exit_handler(int sig)
+{
     stopLoadingSpinner(&spinnerTid);
 
     if (firstCTRLCPressed) {
-        serverQuit(sig);
+        server_quit(sig);
     }
 
     firstCTRLCPressed = true;
     printAndFlush(CTRLC_AGAIN_TO_QUIT_MESSAGE);
 }
 
-void playerQuitHandler(int sig) {
+void player_quit_handler(int sig)
+{
     int playerWhoQuitted = sig == SIGUSR1 ? PLAYER_ONE : PLAYER_TWO;
     int playerWhoStayed = playerWhoQuitted == PLAYER_ONE ? PLAYER_TWO : PLAYER_ONE;
     char* playerWhoQuittedColor = playerWhoQuitted == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR;
     char* playerWhoStayedColor = playerWhoStayed == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR;
 
-    printf(A_PLAYER_QUIT_SERVER_MESSAGE, playerWhoQuittedColor, playerWhoQuitted, game->usernames[playerWhoQuitted]);
+    printf(A_PLAYER_QUIT_SERVER_MESSAGE, playerWhoQuittedColor,
+        playerWhoQuitted, game->usernames[playerWhoQuitted]);
     fflush(stdout);
 
 #if DEBUG
@@ -307,13 +324,15 @@ void playerQuitHandler(int sig) {
 
     if (started) {
         game->result = QUIT;
-        printf("\n" WINS_PLAYER_MESSAGE, playerWhoStayedColor, playerWhoStayed, game->usernames[playerWhoStayed]);
-        notifyPlayerWhoWonForQuit(playerWhoStayed);
+        printf("\n" WINS_PLAYER_MESSAGE, playerWhoStayedColor,
+            playerWhoStayed, game->usernames[playerWhoStayed]);
+        notify_player_who_won_for_quit(playerWhoStayed);
         exit(EXIT_SUCCESS);
     }
 }
 
-void waitForPlayers() {
+void wait_for_players()
+{
     printAndFlush(WAITING_FOR_PLAYERS_MESSAGE);
 
     startLoadingSpinner(&spinnerTid);
@@ -326,11 +345,9 @@ void waitForPlayers() {
                 close(STDOUT_FILENO);
                 execl("./bin/TrisClient", "./TrisClient", "AI", NULL);
                 errExit(EXEC_ERROR);
-            }
-            else if (forkRet < 0) {
+            } else if (forkRet < 0) {
                 errExit(FORK_ERROR);
-            }
-            else {
+            } else {
                 printf(AUTOPLAY_ENABLED_MESSAGE);
 
                 if (game->autoplay == EASY)
@@ -353,14 +370,15 @@ void waitForPlayers() {
         printAndFlush(NEWLINE);
 
         if (++playersCount == 1) {
-            printf(A_PLAYER_JOINED_SERVER_MESSAGE, game->usernames[PLAYER_ONE]);
+            printf(A_PLAYER_JOINED_SERVER_MESSAGE,
+                game->usernames[PLAYER_ONE]);
 
 #if DEBUG
             printf(WITH_PID_MESSAGE, game->pids[PLAYER_ONE]);
 #endif
-        }
-        else if (playersCount == 2) {
-            printf(ANOTHER_PLAYER_JOINED_SERVER_MESSAGE, game->usernames[PLAYER_TWO]);
+        } else if (playersCount == 2) {
+            printf(ANOTHER_PLAYER_JOINED_SERVER_MESSAGE,
+                game->usernames[PLAYER_TWO]);
 
 #if DEBUG
             printf(WITH_PID_MESSAGE, game->pids[PLAYER_TWO]);
@@ -373,20 +391,24 @@ void waitForPlayers() {
     printAndFlush(READY_TO_START_MESSAGE);
 }
 
-void notifyOpponentReady() {
+void notify_opponent_ready()
+{
     signalSemaphore(semId, WAIT_FOR_OPPONENT_READY, 2);
 }
 
-void notifyPlayerWhoWonForQuit(int playerWhoWon) {
+void notify_player_who_won_for_quit(int playerWhoWon)
+{
     kill(game->pids[playerWhoWon], SIGUSR2);
 }
 
-void notifyGameEnded() {
+void notify_name_ended()
+{
     kill(game->pids[PLAYER_ONE], SIGUSR2);
     kill(game->pids[PLAYER_TWO], SIGUSR2);
 }
 
-void notifyServerQuit() {
+void notify_server_quit()
+{
     if (game->pids[PLAYER_ONE] != 0)
         kill(game->pids[PLAYER_ONE], SIGUSR1);
 
@@ -394,10 +416,10 @@ void notifyServerQuit() {
         kill(game->pids[PLAYER_TWO], SIGUSR1);
 }
 
-void waitForMove() {
+void wait_for_move()
+{
     printf(WAITING_FOR_MOVE_SERVER_MESSAGE,
-        turn == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR,
-        turn,
+        turn == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR, turn,
         game->usernames[turn]);
     fflush(stdout);
 
@@ -407,10 +429,10 @@ void waitForMove() {
     } while (errno == EINTR);
 }
 
-void notifyNextMove() {
+void notify_next_move()
+{
     printf(MOVE_RECEIVED_SERVER_MESSAGE,
-        turn == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR,
-        turn,
+        turn == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR, turn,
         game->usernames[turn]);
 
     turn = turn == 1 ? 2 : 1;

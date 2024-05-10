@@ -1,43 +1,43 @@
 /************************************
-* VR487434 - Lorenzo Di Berardino
-* VR486588 - Filippo Milani
-* 09/05/2024
-*************************************/
+ * VR487434 - Lorenzo Di Berardino
+ * VR486588 - Filippo Milani
+ * 09/05/2024
+ *************************************/
 
+#include <errno.h>
+#include <signal.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <signal.h>
-#include <errno.h>
-#include <stdbool.h>
 #include <termios.h>
-#include <unistd.h>
 #include <time.h>
+#include <unistd.h>
 
 #include "utils/data.h"
 #include "utils/globals.h"
 #include "utils/shared_memory/shared_memory.h"
 
 void init();
-void notifyPlayerReady();
-void notifyMove();
-void initSharedMemory();
-void initSemaphores();
+void notify_player_ready();
+void notify_move();
+void init_shared_memory();
+void init_semaphores();
 void askForInput();
-void waitForOpponent();
-void initSignals();
-void exitHandler(int sig);
-void quitHandler(int sig);
-void checkResults(int sig);
-void serverQuitHandler(int sig);
-void waitForMove();
+void wait_for_opponent();
+void init_signals();
+void exit_handler(int);
+void quitHandler(int);
+void checkResults(int);
+void serverQuitHandler(int);
+void wait_for_move();
 void waitForResponse();
 void printMoveScreen();
 void initTimeout();
 void resetTimeout();
-void timeoutHandler(int sig);
-void showInput();
+void timeoutHandler(int);
+void show_input();
 void initTerminalSettings();
-void disposeMemory();
+void dispose_memory();
 
 // Shared memory
 tris_game_t* game;
@@ -61,7 +61,8 @@ bool outputCustomizable = true;
 pthread_t spinnerTid = 0;
 pthread_t timeoutTid = 0;
 
-int main(int argc, char* argv[]) {
+int main(int argc, char* argv[])
+{
     if (argc != N_ARGS_CLIENT + 1 && argc != N_ARGS_CLIENT) {
         errExit(USAGE_ERROR_CLIENT);
     }
@@ -74,14 +75,11 @@ int main(int argc, char* argv[]) {
         if (checkEasy != 0 && checkMedium != 0 && checkHard != 0) {
             printf("%s", argv[2]);
             errExit(USAGE_ERROR_CLIENT);
-        }
-        else if (checkEasy == 0) {
+        } else if (checkEasy == 0) {
             autoPlay = EASY;
-        }
-        else if (checkMedium == 0) {
+        } else if (checkMedium == 0) {
             autoPlay = MEDIUM;
-        }
-        else {
+        } else {
             autoPlay = HARD;
         }
 
@@ -98,8 +96,8 @@ int main(int argc, char* argv[]) {
     }
 
     init();
-    notifyPlayerReady();
-    waitForOpponent();
+    notify_player_ready();
+    wait_for_opponent();
 
     if (playerIndex != INITIAL_TURN) {
         printMoveScreen();
@@ -108,7 +106,7 @@ int main(int argc, char* argv[]) {
     }
 
     do {
-        waitForMove();
+        wait_for_move();
 
         printAndFlush(SHOW_CARET);
 
@@ -117,14 +115,13 @@ int main(int argc, char* argv[]) {
 
         if (autoPlay == NONE || activePlayer) {
             askForInput();
-        }
-        else {
+        } else {
             chooseNextMove(game->matrix, autoPlay, playerIndex, cycles);
         }
 
         stopTimeoutPrint(timeoutTid);
 
-        notifyMove();
+        notify_move();
 
         // Prints after the move
         printMoveScreen();
@@ -139,19 +136,23 @@ int main(int argc, char* argv[]) {
     return EXIT_SUCCESS;
 }
 
-void init() {
+void init()
+{
     printWelcomeMessageClient(username);
     printLoadingMessage();
 
-    initSemaphores();
-    initSharedMemory();
-    initSignals();
+    srand(time(NULL));
+
+    init_semaphores();
+    init_shared_memory();
+    init_signals();
     initTerminalSettings();
 
     printLoadingCompleteMessage();
 }
 
-void initSharedMemory() {
+void init_shared_memory()
+{
     gameId = getSharedMemory(GAME_SIZE, GAME_ID);
     if (gameId < 0) {
         printError(NO_SERVER_FOUND_ERROR);
@@ -166,11 +167,9 @@ void initSharedMemory() {
 
     if ((playerIndex = recordJoin(game, getpid(), username, autoPlay)) == TOO_MANY_PLAYERS_ERROR_CODE) {
         errExit(TOO_MANY_PLAYERS_ERROR);
-    }
-    else if (playerIndex == SAME_USERNAME_ERROR_CODE) {
+    } else if (playerIndex == SAME_USERNAME_ERROR_CODE) {
         errExit(SAME_USERNAME_ERROR);
-    }
-    else if (playerIndex == AUTOPLAY_NOT_ALLOWED_ERROR_CODE) {
+    } else if (playerIndex == AUTOPLAY_NOT_ALLOWED_ERROR_CODE) {
         errExit(AUTOPLAY_NOT_ALLOWED_ERROR);
     }
 
@@ -180,20 +179,23 @@ void initSharedMemory() {
     printf(SERVER_FOUND_SUCCESS, game->pids[SERVER]);
 #endif
 
-    if (atexit(disposeMemory)) {
+    if (atexit(dispose_memory)) {
         errExit(INITIALIZATION_ERROR);
     }
 }
 
-void disposeMemory() {
-    //detachSharedMemory(gameId);
+void dispose_memory()
+{
+    // detachSharedMemory(gameId);
 }
 
-void initSemaphores() {
+void init_semaphores()
+{
     semId = getSemaphores(N_SEM);
 }
 
-void initSignals() {
+void init_signals()
+{
     sigset_t set;
     sigfillset(&set);
     sigdelset(&set, SIGINT);
@@ -204,28 +206,26 @@ void initSignals() {
     sigdelset(&set, SIGALRM);
     sigprocmask(SIG_SETMASK, &set, NULL);
 
-    if (signal(SIGINT, exitHandler) == SIG_ERR ||
-        signal(SIGUSR1, serverQuitHandler) == SIG_ERR ||
-        signal(SIGUSR2, checkResults) == SIG_ERR ||
-        signal(SIGHUP, quitHandler) == SIG_ERR ||
-        signal(SIGTERM, exitHandler) == SIG_ERR) {
+    if (signal(SIGINT, exit_handler) == SIG_ERR || signal(SIGUSR1, serverQuitHandler) == SIG_ERR || signal(SIGUSR2, checkResults) == SIG_ERR || signal(SIGHUP, quitHandler) == SIG_ERR || signal(SIGTERM, exit_handler) == SIG_ERR) {
         printError(INITIALIZATION_ERROR);
         exit(EXIT_FAILURE);
     }
 }
 
-void initTerminalSettings() {
+void initTerminalSettings()
+{
     if ((outputCustomizable = initOutputSettings(&withEcho, &withoutEcho))) {
         setInput(&withoutEcho);
     }
 
-    if (atexit(showInput)) {
+    if (atexit(show_input)) {
         printError(INITIALIZATION_ERROR);
         exit(EXIT_FAILURE);
     }
 }
 
-void showInput() {
+void show_input()
+{
     setInput(&withEcho);
 
 #if DEBUG
@@ -233,16 +233,19 @@ void showInput() {
 #endif
 }
 
-void notifyPlayerReady() {
+void notify_player_ready()
+{
     signalSemaphore(semId, WAIT_FOR_PLAYERS, 1);
 }
 
-void notifyMove() {
+void notify_move()
+{
     cycles++;
     signalSemaphore(semId, WAIT_FOR_MOVE, 1);
 }
 
-void waitForOpponent() {
+void wait_for_opponent()
+{
     if (autoPlay) {
         return;
     }
@@ -261,7 +264,8 @@ void waitForOpponent() {
     started = true;
 }
 
-void waitForMove() {
+void wait_for_move()
+{
     do {
         errno = 0;
         waitSemaphore(semId, PLAYER_ONE_TURN + playerIndex - 1, 1);
@@ -270,21 +274,24 @@ void waitForMove() {
     ignorePreviousInput();
 }
 
-void waitForResponse() {
+void waitForResponse()
+{
     do {
         errno = 0;
         waitSemaphore(semId, PLAYER_ONE_TURN + playerIndex - 1, 1);
     } while (errno == EINTR);
 }
 
-void timeoutHandler(int sig) {
+void timeoutHandler(int sig)
+{
     printMoveScreen();
     printf(TIMEOUT_LOSS_MESSAGE);
     quitHandler(sig);
     exit(EXIT_FAILURE);
 }
 
-void initTimeout() {
+void initTimeout()
+{
     if (game->timeout == 0) {
         return;
     }
@@ -295,7 +302,8 @@ void initTimeout() {
     startTimeoutPrint(&timeoutTid, &game->timeout);
 }
 
-void resetTimeout() {
+void resetTimeout()
+{
     if (game->timeout == 0) {
         return;
     }
@@ -303,10 +311,11 @@ void resetTimeout() {
     alarm(0);
 }
 
-void askForInput() {
+void askForInput()
+{
     char input[MOVE_INPUT_LEN];
 
-    showInput(withoutEcho);
+    show_input(withoutEcho);
 
     printSpaces((digits(game->timeout) + 3) * (game->timeout != 0));
     printf(INPUT_A_MOVE_MESSAGE);
@@ -332,33 +341,33 @@ void askForInput() {
     resetTimeout();
 }
 
-void printMoveScreen() {
+void printMoveScreen()
+{
     clearScreenClient();
     printSymbol(game->symbols[playerIndex - 1], playerIndex, username);
     printTimeout(game->timeout);
     printBoard(game->matrix, game->symbols[0], game->symbols[1]);
 }
 
-void checkResults(int sig) {
+void checkResults(int sig)
+{
     printMoveScreen();
 
     if (game->result == DRAW) {
         printf(DRAW_MESSAGE);
-    }
-    else if (game->result == QUIT) {
+    } else if (game->result == QUIT) {
         printf(YOU_WON_FOR_QUIT_MESSAGE);
-    }
-    else if (game->result != playerIndex) {
+    } else if (game->result != playerIndex) {
         printf(YOU_LOST_MESSAGE);
-    }
-    else {
+    } else {
         printf(YOU_WON_MESSAGE);
     }
 
     exit(EXIT_SUCCESS);
 }
 
-void exitHandler(int sig) {
+void exit_handler(int sig)
+{
     if (!started)
         stopLoadingSpinner(&spinnerTid);
 
@@ -380,12 +389,14 @@ void exitHandler(int sig) {
     fflush(stdout);
 }
 
-void quitHandler(int sig) {
+void quitHandler(int sig)
+{
     if (activePlayer || autoPlay == NONE)
         kill(game->pids[SERVER], playerIndex == 1 ? SIGUSR1 : SIGUSR2);
 }
 
-void serverQuitHandler(int sig) {
+void serverQuitHandler(int sig)
+{
     printf(SERVER_QUIT_MESSAGE);
     exit(EXIT_FAILURE);
 }
