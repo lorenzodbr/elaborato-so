@@ -46,7 +46,7 @@
 
 // ------------- APPLICATION STRINGS --------------
 
-#define VERSION "1.1"
+#define VERSION "1.2"
 #define TRIS_ASCII_ART_TOP "              ______                     \n\
              /\\__  _\\       __           \n\
              \\/_/\\ \\/ _  __/\\_\\    ____  \n\

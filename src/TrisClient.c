@@ -419,13 +419,13 @@ void check_results(int sig)
 
     // Check the result of the game
     if (game->result == DRAW) {
-        printf(DRAW_MESSAGE);
+        print_and_flush(DRAW_MESSAGE);
     } else if (game->result == QUIT) {
-        printf(YOU_WON_FOR_QUIT_MESSAGE);
+        print_and_flush(YOU_WON_FOR_QUIT_MESSAGE);
     } else if (game->result != player_index) {
-        printf(YOU_LOST_MESSAGE);
+        print_and_flush(YOU_LOST_MESSAGE);
     } else {
-        printf(YOU_WON_MESSAGE);
+        print_and_flush(YOU_WON_MESSAGE);
     }
 
     exit(EXIT_SUCCESS);
@@ -442,7 +442,7 @@ void exit_handler(int sig)
         if (active_player || autoplay == NONE)
             kill(game->pids[SERVER], player_index == 1 ? SIGUSR1 : SIGUSR2);
 
-        printf(CLOSING_MESSAGE);
+        print_and_flush(CLOSING_MESSAGE);
         exit(EXIT_SUCCESS);
     }
 
@@ -468,6 +468,6 @@ void quit_handler(int sig)
 void server_quit_handler(int sig)
 {
     // If the server quits, the client exits
-    printf(SERVER_QUIT_MESSAGE);
+    print_and_flush(SERVER_QUIT_MESSAGE);
     exit(EXIT_FAILURE);
 }

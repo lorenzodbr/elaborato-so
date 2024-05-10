@@ -34,7 +34,7 @@ void player_quit_handler(int);
 void wait_for_move();
 void notify_next_move();
 void print_game_settings();
-void server_quit(int);
+void quit_handler(int);
 void show_input();
 void print_result();
 
@@ -107,6 +107,9 @@ int main(int argc, char* argv[])
     exit(EXIT_SUCCESS);
 }
 
+/// @brief Parse the arguments passed to the server
+/// @param argc The number of arguments
+/// @param argv The arguments
 void parse_args(int argc, char* argv[])
 {
     // Parsing timeout
@@ -134,6 +137,9 @@ void parse_args(int argc, char* argv[])
     }
 }
 
+// ------------------ INITIALIZERS -------------------
+
+/// @brief Initialize the server
 void init()
 {
     // Startup messages
@@ -158,41 +164,7 @@ void init()
     print_loading_complete_message();
 }
 
-void print_game_settings()
-{
-    print_and_flush(GAME_SETTINGS_MESSAGE);
-
-    // Print timeout
-    if (game->timeout == 0) {
-        print_and_flush(INFINITE_TIMEOUT_SETTINGS_MESSAGE);
-    } else {
-        printf(TIMEOUT_SETTINGS_MESSAGE, game->timeout);
-    }
-
-    // Print symbols
-    printf(PLAYER_ONE_SYMBOL_SETTINGS_MESSAGE, game->symbols[0]);
-    printf(PLAYER_TWO_SYMBOL_SETTINGS_MESSAGE, game->symbols[1]);
-}
-
-void print_result()
-{
-    print_and_flush(FINAL_STATE_MESSAGE);
-    print_board(game->matrix, game->symbols[0], game->symbols[1]);
-
-    // Print the result based on the variable game->result
-    switch (game->result) {
-    case 0:
-        printf(DRAW_MESSAGE);
-        break;
-    case 1:
-    case 2:
-        printf(WINS_PLAYER_MESSAGE,
-            game->result == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR,
-            game->result, game->usernames[game->result]);
-        break;
-    }
-}
-
+/// @brief Initialize the terminal settings
 void init_terminal()
 {
     // Check if the terminal is customizable
@@ -209,6 +181,7 @@ void init_terminal()
     }
 }
 
+/// @brief Initialize the shared memory
 void init_shared_memory()
 {
     // Get shared memory
@@ -229,12 +202,7 @@ void init_shared_memory()
     set_pid_at(sem_id, game->pids, 0, getpid());
 }
 
-void dispose_memory()
-{
-    dispose_shared_memory(game_id);
-    detach_shared_memory(game);
-}
-
+/// @brief Dispose the shared memory
 void init_semaphores()
 {
     sem_id = get_semaphores(N_SEM);
@@ -256,22 +224,7 @@ void init_semaphores()
     }
 }
 
-void dispose_semaphores()
-{
-    dispose_semaphore(sem_id);
-}
-
-void show_input()
-{
-    set_input(&with_echo);
-    ignore_previous_input();
-    print_and_flush(SHOW_CARET);
-
-#if DEBUG
-    printf(OUTPUT_RESTORED_SUCCESS);
-#endif
-}
-
+/// @brief Initialize the signals
 void init_signals()
 {
     sigset_t set;
@@ -285,14 +238,84 @@ void init_signals()
 
     if (signal(SIGINT, exit_handler) == SIG_ERR
         || signal(SIGTERM, exit_handler) == SIG_ERR
-        || signal(SIGHUP, server_quit) == SIG_ERR
+        || signal(SIGHUP, quit_handler) == SIG_ERR
         || signal(SIGUSR1, player_quit_handler) == SIG_ERR
         || signal(SIGUSR2, player_quit_handler) == SIG_ERR) {
         errexit(INITIALIZATION_ERROR);
     }
 }
 
-void server_quit(int sig)
+// ------------------ DISPOSERS -------------------
+
+/// @brief Dispose the shared memory
+void dispose_memory()
+{
+    dispose_shared_memory(game_id);
+    detach_shared_memory(game);
+}
+
+void dispose_semaphores()
+{
+    dispose_semaphore(sem_id);
+}
+
+// --------------- OUTPUT SETTINGS ----------------
+
+/// @brief Show input in the terminal
+void show_input()
+{
+    set_input(&with_echo);
+    ignore_previous_input();
+    print_and_flush(SHOW_CARET);
+
+#if DEBUG
+    printf(OUTPUT_RESTORED_SUCCESS);
+#endif
+}
+
+// ----------------- PRINT FUNCTIONS -----------------
+
+/// @brief Print the game settings specified by the user
+void print_game_settings()
+{
+    print_and_flush(GAME_SETTINGS_MESSAGE);
+
+    // Print timeout
+    if (game->timeout == 0) {
+        print_and_flush(INFINITE_TIMEOUT_SETTINGS_MESSAGE);
+    } else {
+        printf(TIMEOUT_SETTINGS_MESSAGE, game->timeout);
+    }
+
+    // Print symbols
+    printf(PLAYER_ONE_SYMBOL_SETTINGS_MESSAGE, game->symbols[0]);
+    printf(PLAYER_TWO_SYMBOL_SETTINGS_MESSAGE, game->symbols[1]);
+}
+
+/// @brief Print the result of the game
+void print_result()
+{
+    print_and_flush(FINAL_STATE_MESSAGE);
+    print_board(game->matrix, game->symbols[0], game->symbols[1]);
+
+    // Print the result based on the variable game->result
+    switch (game->result) {
+    case 0:
+        printf(DRAW_MESSAGE);
+        break;
+    case 1:
+    case 2:
+        printf(WINS_PLAYER_MESSAGE,
+            game->result == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR,
+            game->result, game->usernames[game->result]);
+        break;
+    }
+}
+
+// ----------------- SIGNAL HANDLERS -----------------
+
+/// @brief Handle the quit
+void quit_handler(int sig)
 {
     // If the server quits, tell the clients (if still connected)
     printf(CLOSING_MESSAGE);
@@ -300,22 +323,23 @@ void server_quit(int sig)
     exit(EXIT_SUCCESS);
 }
 
+/// @brief Handle the exit signal
 void exit_handler(int sig)
 {
     // Stop the spinner if it's still running
     stop_loading_spinner(&spinner_tid);
 
     if (first_CTRLC_pressed) {
-        server_quit(sig);
+        quit_handler(sig);
     }
 
     first_CTRLC_pressed = true;
     print_and_flush(CTRLC_AGAIN_TO_QUIT_MESSAGE);
 }
 
+/// @brief Handle the player quit
 void player_quit_handler(int sig)
 {
-
     int player_who_quitted = sig == SIGUSR1 ? PLAYER_ONE : PLAYER_TWO;
     int player_who_stayed = PLAYER_ONE + PLAYER_TWO - player_who_quitted;
     char* player_who_quitted_color = player_who_quitted == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR;
@@ -347,6 +371,9 @@ void player_quit_handler(int sig)
     }
 }
 
+// ----------------- GAME FUNCTIONS -----------------
+
+/// @brief Wait for the players to join
 void wait_for_players()
 {
     print_and_flush(WAITING_FOR_PLAYERS_MESSAGE);
@@ -428,28 +455,28 @@ void wait_for_players()
     print_and_flush(READY_TO_START_MESSAGE);
 }
 
+/// @brief Tell the opponent that the player is ready
 void notify_opponent_ready()
 {
-    // Tell the first player that the second player is ready
     signal_semaphore(sem_id, WAIT_FOR_OPPONENT_READY, 2);
 }
 
+/// @brief Notify the player who won because the other player quitted
 void notify_player_who_won_for_quit(int player_who_won)
 {
-    // Notify the player who won because the other player quitted
     kill(game->pids[player_who_won], SIGUSR2);
 }
 
+/// @brief Notify the players that the game is ended
 void notify_name_ended()
 {
-    // Notify both the players that the game is ended
     kill(game->pids[PLAYER_ONE], SIGUSR2);
     kill(game->pids[PLAYER_TWO], SIGUSR2);
 }
 
+/// @brief Notify that the server is quitting
 void notify_server_quit()
 {
-    // Notify the remaining players that the server is quitting
     if (game->pids[PLAYER_ONE] != 0)
         kill(game->pids[PLAYER_ONE], SIGUSR1);
 
@@ -457,6 +484,7 @@ void notify_server_quit()
         kill(game->pids[PLAYER_TWO], SIGUSR1);
 }
 
+/// @brief Wait for the move of the current player
 void wait_for_move()
 {
     printf(WAITING_FOR_MOVE_SERVER_MESSAGE,
@@ -464,16 +492,15 @@ void wait_for_move()
         game->usernames[turn]);
     fflush(stdout);
 
-    // Wait for the move of the current player
     do {
         errno = 0;
         wait_semaphore(sem_id, WAIT_FOR_MOVE, 1);
     } while (errno == EINTR);
 }
 
+/// @brief Notify the next player that it's their turn
 void notify_next_move()
 {
-    // Notify the player who is waiting the opponent's move
     printf(MOVE_RECEIVED_SERVER_MESSAGE,
         turn == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR, turn,
         game->usernames[turn]);

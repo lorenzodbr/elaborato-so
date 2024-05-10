@@ -112,7 +112,7 @@ void print_loading_message()
 void print_and_flush(const char* msg)
 {
     // Print the message and flush the output buffer immediately after
-    printf(msg);
+    printf("%s", msg);
     fflush(stdout);
 }
 
