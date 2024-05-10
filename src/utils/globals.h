@@ -111,7 +111,8 @@ void print_loading_message()
 
 void print_and_flush(const char* msg)
 {
-    printf("%s", msg);
+    // Print the message and flush the output buffer immediately after
+    printf(msg);
     fflush(stdout);
 }
 
@@ -124,6 +125,7 @@ void print_spaces(int n)
     fflush(stdout);
 }
 
+/// @brief Function that prints the countdown of the timeout near the prompt
 void* timeout_print_handler(void* timeout)
 {
     int timeoutValue = *(int*)timeout;
@@ -142,11 +144,13 @@ void* timeout_print_handler(void* timeout)
     return NULL;
 }
 
+/// @brief Starts the thread that prints the countdown
 void start_timeout_print(pthread_t* tid, int* timeout)
 {
     pthread_create(tid, NULL, timeout_print_handler, timeout);
 }
 
+/// @brief Stops the thread that prints the countdown
 void stop_timeout_print(pthread_t tid)
 {
     if (tid == 0) {
@@ -195,6 +199,7 @@ void print_board(int* matrix, char player_one_symbol, char player_two_symbol)
     printf("\n\n");
 }
 
+/// @brief Print the symbol of the player as a hint
 void print_symbol(char symbol, int player_index, char* username)
 {
     printf(YOUR_SYMBOL_IS_MESSAGE, username, player_index == PLAYER_ONE ? PLAYER_ONE_COLOR : PLAYER_TWO_COLOR, symbol);
@@ -206,11 +211,19 @@ void print_timeout(int timeout)
     printf(timeout == 0 ? INFINITE_TIMEOUT_MESSAGE : TIMEOUT_MESSAGE, timeout);
 }
 
+/// @brief Prints an error message with red mark and exits
 void print_error(const char* msg)
 {
     print_and_flush(FRED ERROR_CHAR);
     print_and_flush(msg);
     print_and_flush(FNRM);
+}
+
+/// @brief Prints a success message with green mark
+void print_success(const char* msg)
+{
+    print_and_flush(FGRN SUCCESS_CHAR);
+    print_and_flush(msg);
 }
 
 void clear_screen_server()
@@ -223,12 +236,7 @@ void clear_screen_client()
     print_header_client();
 }
 
-void print_success(const char* msg)
-{
-    print_and_flush(FGRN SUCCESS_CHAR);
-    print_and_flush(msg);
-}
-
+/// @brief Function that prints a loading spinner indefinitely
 void* loading_spinner()
 {
     while (1) {
@@ -245,11 +253,13 @@ void* loading_spinner()
     return NULL;
 }
 
+/// @brief Starts the thread that prints the loading spinner
 void start_loading_spinner(pthread_t* tid)
 {
     pthread_create(tid, NULL, loading_spinner, NULL);
 }
 
+/// @brief Stops the thread that prints the loading spinner
 void stop_loading_spinner(pthread_t* tid)
 {
     if (*tid != 0) {
@@ -261,6 +271,9 @@ void stop_loading_spinner(pthread_t* tid)
 
 // --------- MATH ---------
 
+/// @brief Returns the number of digits of a number
+/// @param n The number to count the digits of
+/// @return The number of digits of the number
 int digits(int n)
 {
     if (n < 0)
@@ -270,11 +283,19 @@ int digits(int n)
     return 1 + digits(n / 10);
 }
 
+/// @brief Returns the maximum of two numbers
+/// @param a The first number
+/// @param b The second number
+/// @return The maximum of the two numbers
 int max(int a, int b)
 {
     return a > b ? a : b;
 }
 
+/// @brief Returns the minimum of two numbers
+/// @param a The first number
+/// @param b The second number
+/// @return The minimum of the two numbers
 int min(int a, int b)
 {
     return a < b ? a : b;
@@ -282,16 +303,24 @@ int min(int a, int b)
 
 // --------- TERMINAL MANAGEMENT ---------
 
+/// @brief Set the terminal input settings
+/// @param policy The policy to set (with or without echo)
+/// @return 0 if the operation was successful, -1 otherwise
 int set_input(struct termios* policy)
 {
     return tcsetattr(STDOUT_FILENO, TCSANOW, policy);
 }
 
+/// @brief Ignore the input entered before the function call but not consumed
 void ignore_previous_input()
 {
     tcflush(STDIN_FILENO, TCIFLUSH);
 }
 
+/// @brief Initialize and get the terminal settings for the output
+/// @param with_echo The termios struct to store the settings with echo
+/// @param without_echo The termios struct to store the settings without echo
+/// @return True if the operation was successful, false otherwise
 bool init_output_settings(struct termios* with_echo, struct termios* without_echo)
 {
     if (tcgetattr(STDOUT_FILENO, with_echo) != 0) {
@@ -306,6 +335,8 @@ bool init_output_settings(struct termios* with_echo, struct termios* without_ech
 
 // --------- GAME MANAGEMENT ---------
 
+/// @brief Initialize the game board with all zeros
+/// @param matrix The matrix to initialize
 void init_board(int* matrix)
 {
     for (int i = 0; i < MATRIX_SIDE_LEN; i++) {
@@ -319,6 +350,8 @@ void init_board(int* matrix)
 #endif
 }
 
+/// @brief Initialize the array of pids with all zeros
+/// @param pids_pointer The pointer to the array of pids
 void init_pids(int* pids_pointer)
 {
     for (int i = 0; i < 3; i++) {
@@ -326,7 +359,13 @@ void init_pids(int* pids_pointer)
     }
 }
 
-// set specified pid to the first empty slot (out of 3)
+/// @brief set specified pid to the first empty slot (out of 3)
+/// @param sem_id The semaphore id
+/// @param game The game struct
+/// @param pid The pid to set
+/// @param username The username of the player
+/// @param autoplay The autoplay mode
+/// @return The index of the player in the game struct, or an error code
 int record_join(int sem_id, tris_game_t* game, int pid, char* username, int autoplay)
 {
     int player_index = TOO_MANY_PLAYERS_ERROR_CODE;
@@ -357,6 +396,11 @@ int record_join(int sem_id, tris_game_t* game, int pid, char* username, int auto
     return player_index;
 }
 
+/// @brief Explicitly set the pid at the specified index
+/// @param sem_id Semaphore id to lock pid array with
+/// @param pids_pointer The pointer to the array of pids
+/// @param index The index to set the pid at
+/// @param pid The pid to set
 void set_pid_at(int sem_id, int* pids_pointer, int index, int pid)
 {
     wait_semaphore(sem_id, PID_LOCK, 1);
@@ -364,23 +408,35 @@ void set_pid_at(int sem_id, int* pids_pointer, int index, int pid)
     signal_semaphore(sem_id, PID_LOCK, 1);
 }
 
+/// @brief Set the pid at the specified index to 0
+/// @param game The game struct
+/// @param index The index to clear the pid at
 void record_quit(tris_game_t* game, int index)
 {
     int sem_id = get_semaphores(N_SEM);
 
     wait_semaphore(sem_id, PID_LOCK, 1);
     game->pids[index] = 0;
-    free(game->usernames[index]);
+    // free(game->usernames[index]);
     signal_semaphore(sem_id, PID_LOCK, 1);
 }
 
-// no need to use semaphores here, as only the server read from this buffer,
-// and it does this only after clients have written to it and notified the server
+/// @brief Get the pid at the specified index
+/// @param pids_pointer The pointer to the array of pids
+/// @param index The index to get the pid from
+/// @return The pid at the specified index
 int get_pid(int* pids_pointer, int index)
 {
+    // no need to use semaphores here, as only the server read from this buffer,
+    // and it does this only after clients have written to it and notified the server
     return pids_pointer[index];
 }
 
+/// @brief Check if the move is valid
+/// @param matrix The matrix to check the move on
+/// @param input The input string to check
+/// @param move The move struct to store the row and column of the move
+/// @return True if the move is valid, false otherwise
 bool is_valid_move(int* matrix, char* input, move_t* move)
 {
     // the input is valid if it is in the format [A-C or a-c],[1-3]
@@ -408,6 +464,9 @@ bool is_valid_move(int* matrix, char* input, move_t* move)
     return true;
 }
 
+/// @brief Check if the game is ended
+/// @param matrix The matrix to check the game on
+/// @return The result of the game
 int is_game_ended(int* matrix)
 {
     // check rows
@@ -443,6 +502,11 @@ int is_game_ended(int* matrix)
     return DRAW;
 }
 
+/// @brief Minimax algorithm to find the best move
+/// @param game_matrix The matrix to check the game on
+/// @param depth The depth of the recursion
+/// @param is_maximizing True if the current player is maximizing, false otherwise
+/// @return The value of the best move
 int minimax(int* game_matrix, int depth, bool is_maximizing)
 {
     int result = is_game_ended(game_matrix);
@@ -481,7 +545,9 @@ int minimax(int* game_matrix, int depth, bool is_maximizing)
     }
 }
 
-// uses minimax to choose the next best move
+/// @brief Choose the best move for the AI with the minimax algorithm
+/// @param game_matrix The matrix to check the game on
+/// @param player_index The index of the player
 void chooseBestMove(int* game_matrix, int player_index)
 {
     int best_val = INT_MIN;
@@ -504,6 +570,9 @@ void chooseBestMove(int* game_matrix, int player_index)
     game_matrix[best_move.row + best_move.col * MATRIX_SIDE_LEN] = player_index;
 }
 
+/// @brief Choose a random move for the AI
+/// @param game_matrix The matrix to check the game on
+/// @param player_index The index of the player
 void chooseRandomMove(int* game_matrix, int player_index)
 {
     int random_index;
@@ -515,6 +584,10 @@ void chooseRandomMove(int* game_matrix, int player_index)
     game_matrix[random_index] = player_index;
 }
 
+/// @brief Choose a random or the best move for the AI one after the other
+/// @param game_matrix The matrix to check the game on
+/// @param player_index The index of the player
+/// @param cycles The number of moves currently made
 void chooseRandomOrBestMove(int* game_matrix, int player_index, int cycles)
 {
     if (cycles % 2 != 0)
@@ -523,6 +596,9 @@ void chooseRandomOrBestMove(int* game_matrix, int player_index, int cycles)
         chooseRandomMove(game_matrix, player_index);
 }
 
+/// @brief Choose the next move for the AI based on the difficulty
+/// @param game_matrix The matrix to check the game on
+/// @param difficulty The difficulty of the AI
 void chooseNextMove(int* game_matrix, int difficulty, int player_index, int cycles)
 {
     switch (difficulty) {
