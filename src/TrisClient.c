@@ -45,6 +45,9 @@ int game_id;
 // Semaphores
 int sem_id;
 
+// Signals
+sigset_t set;
+
 // State variables
 bool first_CTRLC_pressed = false;
 bool started = false;
@@ -221,7 +224,6 @@ void init_semaphores()
 void init_signals()
 {
     // Set the signals to handle
-    sigset_t set;
     sigfillset(&set);
     sigdelset(&set, SIGINT);
     sigdelset(&set, SIGUSR1);
@@ -294,17 +296,23 @@ void wait_for_opponent()
     // Show the waiting message
     print_and_flush(game->usernames[player_index - 1]);
     print_and_flush(WAITING_FOR_OPPONENT_MESSAGE);
+    print_and_flush(HIDE_CARET);
     start_loading_spinner(&spinner_tid);
 
     // Wait for the opponent to be ready. If stopped by signal, retry
     do {
         errno = 0;
         wait_semaphore(sem_id, WAIT_FOR_OPPONENT_READY, 1);
+
+        if (errno == EIDRM) {
+            sigsuspend(&set);
+        }
     } while (errno == EINTR);
 
     // When the opponent is ready, stop the spinner and print the message
     stop_loading_spinner(&spinner_tid);
     print_and_flush(OPPONENT_READY_MESSAGE);
+    print_and_flush(SHOW_CARET);
     started = true;
 }
 
@@ -315,6 +323,10 @@ void wait_for_move()
     do {
         errno = 0;
         wait_semaphore(sem_id, PLAYER_ONE_TURN + player_index - 1, 1);
+
+        if (errno == EIDRM) {
+            sigsuspend(&set);
+        }
     } while (errno == EINTR);
 
     // Flush the input buffer to prevent buffer overflow
