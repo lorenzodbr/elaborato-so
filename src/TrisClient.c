@@ -480,7 +480,8 @@ void quit_handler(int sig)
 /// @brief Handles the server quit
 void server_quit_handler(int sig)
 {
-    // If the server quits, the client exits
+    // If the server quits, the client displays a message and exits
+    stop_loading_spinner(&spinner_tid);
     print_and_flush(SERVER_QUIT_MESSAGE);
     exit(EXIT_FAILURE);
 }
