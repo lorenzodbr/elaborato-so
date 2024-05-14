@@ -11,7 +11,7 @@
 
 // ----------------- DEBUG ------------------
 
-#define DEBUG 0
+#define DEBUG 1
 
 // Args
 #define N_ARGS_SERVER 3

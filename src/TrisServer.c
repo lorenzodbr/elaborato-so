@@ -189,18 +189,17 @@ void init_shared_memory()
     if (game_id == -1 || game == NULL) {
         // Get shared memory
         game_id = get_and_init_shared_memory(GAME_SIZE, GAME_ID);
-
         game = (tris_game_t*)attach_shared_memory(game_id);
-
-        if (atexit(dispose_memory)) {
-            errexit(INITIALIZATION_ERROR);
-        }
     }
 #if DEBUG
     else {
         printf(FOUND_CRASHED_SERVER_MESSAGE);
     }
 #endif
+
+    if (atexit(dispose_memory)) {
+        errexit(INITIALIZATION_ERROR);
+    }
 
     // Initialize variables
     game->autoplay = NONE;

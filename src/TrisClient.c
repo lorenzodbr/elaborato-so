@@ -93,7 +93,7 @@ int main(int argc, char* argv[])
 
     // Check if the username length is correct
     username = argv[1];
-    if (strlen(username) >= USERNAME_MAX_LEN) {
+    if (strlen(username) > USERNAME_MAX_LEN) {
         errexit(USERNAME_TOO_LONG_ERROR);
     }
 
