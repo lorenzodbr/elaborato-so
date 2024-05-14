@@ -246,6 +246,7 @@ void init_signals()
 /// @brief Initializes the terminal settings
 void init_terminal_settings()
 {
+#if PRETTY
     // Initialize the terminal settings: if possible, set the terminal to raw mode
     if ((output_customizable = init_output_settings(&with_echo, &without_echo))) {
         set_input(&without_echo);
@@ -256,13 +257,17 @@ void init_terminal_settings()
             exit(EXIT_FAILURE);
         }
     }
+#endif
 }
 
 /// @brief Sets the terminal to show the input
 void show_input()
 {
     // Restore the terminal settings
+#if PRETTY
     set_input(&with_echo);
+#endif
+
     print_and_flush(SHOW_CARET);
 
 #if DEBUG
@@ -304,6 +309,9 @@ void wait_for_opponent()
         errno = 0;
         wait_semaphore(sem_id, WAIT_FOR_OPPONENT_READY, 1);
 
+        // If the semaphore is removed, it means the server quitted.
+        // Then, you just need to wait until the signal sent by the server
+        // is catched by the signal handler
         if (errno == EIDRM) {
             sigsuspend(&set);
         }
@@ -324,6 +332,9 @@ void wait_for_move()
         errno = 0;
         wait_semaphore(sem_id, PLAYER_ONE_TURN + player_index - 1, 1);
 
+        // If the semaphore is removed, it means the server quitted.
+        // Then, you just need to wait until the signal sent by the server
+        // is catched by the signal handler
         if (errno == EIDRM) {
             sigsuspend(&set);
         }
@@ -376,17 +387,20 @@ void ask_for_input()
 {
     char input[MOVE_INPUT_LEN + 1];
 
+#if PRETTY
     // Restore the terminal settings
     show_input(without_echo);
 
     // Print the input message shifting it to the right by the length of the timeout
     print_spaces((digits(game->timeout) + 3) * (game->timeout != 0));
+#endif
+
     printf(INPUT_A_MOVE_MESSAGE);
 
     // Initialize the timeout
     init_timeout();
 
-    // Read the move
+    // Read the move (only the first characters are considered)
     scanf("%" STR(MOVE_INPUT_LEN) "s", input);
     while (getchar() != '\n') // needed to prevent buffer overflow
         ;
@@ -398,7 +412,9 @@ void ask_for_input()
         first_CTRLC_pressed = false; // Reset firstCTRLCPressed if something else is inserted
 
         // Print the error message and ask for a new move
+#if PRETTY
         print_spaces((digits(game->timeout) + 3) * (game->timeout != 0));
+#endif
         print_error(INVALID_MOVE_ERROR);
         scanf("%s", input);
     }

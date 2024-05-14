@@ -151,17 +151,21 @@ void* timeout_print_handler(void* timeout)
 /// @brief Starts the thread that prints the countdown
 void start_timeout_print(pthread_t* tid, int* timeout)
 {
+#if PRETTY
     pthread_create(tid, NULL, timeout_print_handler, timeout);
+#endif
 }
 
 /// @brief Stops the thread that prints the countdown
 void stop_timeout_print(pthread_t tid)
 {
+#if PRETTY
     if (tid == 0) {
         return;
     }
 
     pthread_cancel(tid);
+#endif
 }
 
 void print_loading_complete_message()
@@ -260,17 +264,21 @@ void* loading_spinner()
 /// @brief Starts the thread that prints the loading spinner
 void start_loading_spinner(pthread_t* tid)
 {
+#if PRETTY
     pthread_create(tid, NULL, loading_spinner, NULL);
+#endif
 }
 
 /// @brief Stops the thread that prints the loading spinner
 void stop_loading_spinner(pthread_t* tid)
 {
+#if PRETTY
     if (*tid != 0) {
         pthread_cancel(*tid);
         print_and_flush("\b \b");
         *tid = 0;
     }
+#endif
 }
 
 // --------- MATH ---------
@@ -312,13 +320,19 @@ int min(int a, int b)
 /// @return 0 if the operation was successful, -1 otherwise
 int set_input(struct termios* policy)
 {
+#if PRETTY
     return tcsetattr(STDOUT_FILENO, TCSANOW, policy);
+#else
+    return 0;
+#endif
 }
 
 /// @brief Ignore the input entered before the function call but not consumed
 void ignore_previous_input()
 {
+#if PRETTY
     tcflush(STDIN_FILENO, TCIFLUSH);
+#endif
 }
 
 /// @brief Initialize and get the terminal settings for the output
@@ -327,13 +341,14 @@ void ignore_previous_input()
 /// @return True if the operation was successful, false otherwise
 bool init_output_settings(struct termios* with_echo, struct termios* without_echo)
 {
+#if PRETTY
     if (tcgetattr(STDOUT_FILENO, with_echo) != 0) {
         return false;
     }
 
     memcpy(without_echo, with_echo, sizeof(struct termios));
     without_echo->c_lflag &= ~ECHO;
-
+#endif
     return true;
 }
 
@@ -358,6 +373,7 @@ void init_board(int* matrix)
 /// @param pids_pointer The pointer to the array of pids
 void init_pids(int* pids_pointer)
 {
+    // No need to use a semaphore, since only the server writes to this buffer at this point
     for (int i = 0; i < 3; i++) {
         pids_pointer[i] = 0;
     }
@@ -372,7 +388,7 @@ void init_pids(int* pids_pointer)
 /// @return The index of the player in the game struct, or an error code
 int record_join(int sem_id, tris_game_t* game, int pid, char* username, int autoplay)
 {
-    // Block all (catchable) signals in order to prevent deadlocks; 
+    // Block all (catchable) signals in order to prevent deadlocks;
     // They will be re-enabled in init_signals() function in clients
     sigset_t mask;
     sigfillset(&mask);
