@@ -148,9 +148,10 @@ void init()
     print_loading_message();
 
     // Check if another server is running
-    if (are_there_attached_processes(game_id)) {
+    if (is_another_server_running(&game_id, &game)) {
         errexit(SERVER_ALREADY_RUNNING_ERROR);
     }
+
     // Terminal settings
     init_terminal();
 
@@ -185,14 +186,21 @@ void init_terminal()
 /// @brief Initialize the shared memory
 void init_shared_memory()
 {
-    // Get shared memory
-    game_id = get_and_init_shared_memory(GAME_SIZE, GAME_ID);
+    if (game_id == -1 || game == NULL) {
+        // Get shared memory
+        game_id = get_and_init_shared_memory(GAME_SIZE, GAME_ID);
 
-    game = (tris_game_t*)attach_shared_memory(game_id);
+        game = (tris_game_t*)attach_shared_memory(game_id);
 
-    if (atexit(dispose_memory)) {
-        errexit(INITIALIZATION_ERROR);
+        if (atexit(dispose_memory)) {
+            errexit(INITIALIZATION_ERROR);
+        }
     }
+#if DEBUG
+    else {
+        printf(FOUND_CRASHED_SERVER_MESSAGE);
+    }
+#endif
 
     // Initialize variables
     game->autoplay = NONE;

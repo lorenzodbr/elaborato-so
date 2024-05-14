@@ -61,10 +61,24 @@ void detach_shared_memory(void* addr)
     }
 }
 
-bool are_there_attached_processes()
+bool is_another_server_running(int* game_id, tris_game_t** game)
 {
-    // check if there are attached processes by checking
-    // if the shared memory is obtainable without creating it
+    // check if there are attached processes by trying to attach to the
+    // shared memory if the shared memory is obtainable without creating it
     // (only the first server is capable of this)
-    return get_shared_memory(0, GAME_ID) > -1;
+    *game_id = get_shared_memory(0, GAME_ID);
+
+    // if the shared memory does not exist, no server is running
+    if (*game_id < 0) {
+        return false;
+    }
+
+    // if the shared memory exists, check if the set pid corresponds to a running process
+    *game = (tris_game_t*)attach_shared_memory(*game_id);
+
+    if (kill((*game)->pids[SERVER], 0) < 0) {
+        return false;
+    }
+
+    return true;
 }

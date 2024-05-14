@@ -375,8 +375,8 @@ int record_join(int sem_id, tris_game_t* game, int pid, char* username, int auto
     // Block all (catchable) signals in order to prevent deadlocks; 
     // They will be re-enabled in init_signals() function in clients
     sigset_t mask;
-    sigemptyset(&mask);
-    sigprocmask(SIG_SETMASK, &mask, NULL);
+    sigfillset(&mask);
+    sigprocmask(SIG_BLOCK, &mask, NULL);
 
     int player_index = TOO_MANY_PLAYERS_ERROR_CODE;
 

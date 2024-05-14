@@ -149,6 +149,7 @@
 #define READY_TO_START_MESSAGE "\n\n" INFO_CHAR "Pronti per cominciare" FNRM
 #define FINAL_STATE_MESSAGE "\n" INFO_CHAR "Stato finale della partita:\n"
 #define CLOSING_MESSAGE "\n" WARNING_CHAR "Chiusura in corso...\n"
+#define FOUND_CRASHED_SERVER_MESSAGE WARNING_CHAR "Trovato un server crashato. Ripristino delle IPC in corso...\n"
 
 // Debug messages
 #define MY_PID_MESSAGE SUCCESS_CHAR "PID = %d\n"
