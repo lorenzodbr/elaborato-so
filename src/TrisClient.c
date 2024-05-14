@@ -374,7 +374,7 @@ void reset_timeout()
 /// @brief Asks the player for a move
 void ask_for_input()
 {
-    char input[MOVE_INPUT_LEN];
+    char input[MOVE_INPUT_LEN + 1];
 
     // Restore the terminal settings
     show_input(without_echo);
@@ -387,7 +387,7 @@ void ask_for_input()
     init_timeout();
 
     // Read the move
-    scanf("%s", input);
+    scanf("%" STR(MOVE_INPUT_LEN) "s", input);
     while (getchar() != '\n') // needed to prevent buffer overflow
         ;
 

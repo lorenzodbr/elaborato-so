@@ -75,6 +75,9 @@ void chooseNextMove(int*, int, int, int);
 
 // --------- MESSAGES ---------
 
+#define STR2(x) #x
+#define STR(X) STR2(X)
+
 void print_header_server()
 {
     printf(CLEAR_SCREEN);
