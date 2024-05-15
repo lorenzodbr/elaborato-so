@@ -412,7 +412,7 @@ int record_join(int sem_id, tris_game_t* game, int pid, char* username, int auto
 
             game->pids[i] = pid;
             player_index = i;
-            strcpy(game->usernames[i], username);
+            strncpy(game->usernames[i], username, USERNAME_MAX_LEN);
 
             break;
         }

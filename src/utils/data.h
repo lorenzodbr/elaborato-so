@@ -166,7 +166,7 @@
 #define INPUT_A_MOVE_MESSAGE " Inserisci la mossa (LetteraNumero): "
 #define WAITING_FOR_MOVE_SERVER_MESSAGE WARNING_CHAR "In attesa della mossa del %sgiocatore %d" FNRM " (" FORNG "%s" FNRM ")... "
 #define MOVE_RECEIVED_SERVER_MESSAGE "\n" INFO_CHAR "Mossa ricevuta dal %sgiocatore %d" FNRM " (" FORNG "%s" FNRM ")\n"
-#define A_PLAYER_JOINED_SERVER_MESSAGE "\n" INFO_CHAR "Un giocatore " FORNG "%s" FNRM " è entrato in partita "
+#define A_PLAYER_JOINED_SERVER_MESSAGE "\n" INFO_CHAR "Il giocatore " FORNG "%s" FNRM " è entrato in partita "
 #define ANOTHER_PLAYER_JOINED_SERVER_MESSAGE INFO_CHAR "Un altro giocatore " FORNG "%s" FNRM " è entrato in partita "
 #define STARTS_PLAYER_MESSAGE ". Inizia il %sgiocatore %d" FNRM " (" FORNG "%s" FNRM ")\n"
 #define A_PLAYER_QUIT_SERVER_MESSAGE "\n\n" WARNING_CHAR "Il %sgiocatore %d" FNRM " (" FORNG "%s" FNRM ") ha abbandonato la partita "
@@ -204,7 +204,7 @@
 
 // General errors
 #define USAGE_ERROR_SERVER "Uso: ./TrisServer <timeout> <playerOneSymbol> <playerTwoSymbol>"
-#define USAGE_ERROR_CLIENT "Uso: ./TrisClient <username> [*]"
+#define USAGE_ERROR_CLIENT "Uso: ./TrisClient <username> [*|**|***]"
 #define TOO_MANY_PLAYERS_ERROR "Troppi giocatori connessi. Riprova più tardi.\n"
 #define SAME_USERNAME_ERROR "Il nome utente è già in uso. Riprova con un altro nome.\n"
 #define INITIALIZATION_ERROR "Errore durante l'inizializzazione."
