@@ -398,7 +398,7 @@ void wait_for_players()
             // Fork the process
             if ((fork_ret = fork()) == 0) {
                 // Prevent the client from writing to the same stdout of the server
-                // close(STDOUT_FILENO);
+                close(STDOUT_FILENO);
 
                 // Execute the client
                 execl("./bin/TrisClient", "./TrisClient", "AI", NULL);
