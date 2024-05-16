@@ -11,7 +11,7 @@
 
 // ----------------- DEBUG ------------------
 
-#define DEBUG 0
+#define DEBUG 1
 #define PRETTY 1
 
 // Args
@@ -187,7 +187,7 @@
 #define SERVER_FOUND_SUCCESS FGRN SUCCESS_CHAR "Trovato TrisServer con PID = %d\n" FNRM
 
 // Semaphore success messages
-#define SEMAPHORE_OBTAINED_SUCCESS FGRN SUCCESS_CHAR "Semafori ottenuti\n" FNRM
+#define SEMAPHORE_OBTAINED_SUCCESS FGRN SUCCESS_CHAR "Semafori ottenuti (ID: %d)\n" FNRM
 #define SEMAPHORES_INITIALIZED_SUCCESS FGRN SUCCESS_CHAR "Semafori inizializzati\n" FNRM
 #define SEMAPHORES_DISPOSED_SUCCESS FGRN SUCCESS_CHAR "Semafori deallocati\n" FNRM
 
@@ -245,4 +245,4 @@
 #define FORK_ERROR "Errore durante la creazione di un processo figlio."
 
 // Exec errors
-#define EXEC_ERROR "Errore durante l'esecuzione di un programma."
+#define EXEC_ERROR "\n\n" ERROR_CHAR "Errore durante l'esecuzione del client automatico. Assicurati che i due eseguibili siano presenti nella stessa cartella.\n"

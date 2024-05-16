@@ -398,15 +398,18 @@ void wait_for_players()
             // Fork the process
             if ((fork_ret = fork()) == 0) {
                 // Prevent the client from writing to the same stdout of the server
-                close(STDOUT_FILENO);
+                // close(STDOUT_FILENO);
 
                 // Execute the client
                 execl("./bin/TrisClient", "./TrisClient", "AI", NULL);
 
-                // Executed only if execl fails
-                errexit(EXEC_ERROR);
+                // Executed only if execl fails;
+                // Prevent connected client from hanging
+                exit(EXIT_FAILURE);
             } else if (fork_ret < 0) {
                 // Executed only if fork fails
+                // Prevent connected client from hanging
+                notify_server_quit();
                 errexit(FORK_ERROR);
             } else {
                 // If the server is in autoplay mode, print the message
