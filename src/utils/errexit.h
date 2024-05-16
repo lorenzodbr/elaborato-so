@@ -18,5 +18,7 @@ void errexit(const char* msg)
     printf("\n");
 #endif
 
+    fflush(stdout);
+
     exit(EXIT_FAILURE);
 }

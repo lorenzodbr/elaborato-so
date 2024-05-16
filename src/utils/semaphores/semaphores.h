@@ -39,7 +39,7 @@ int get_semaphores(int n_sems)
     }
 
 #if DEBUG
-    printf(SEMAPHORE_OBTAINED_SUCCESS);
+    printf(SEMAPHORE_OBTAINED_SUCCESS, sem_id);
 #endif
 
     return sem_id;
