@@ -39,11 +39,11 @@ void init_terminal_settings();
 void dispose_memory();
 
 // Shared memory
-tris_game_t* game;
-int game_id;
+tris_game_t* game = NULL;
+int game_id = -1;
 
 // Semaphores
-int sem_id;
+int sem_id = -1;
 
 // Signals
 sigset_t set;
@@ -53,7 +53,7 @@ bool first_CTRLC_pressed = false;
 bool started = false;
 bool active_player = false;
 
-char* username;
+char* username = NULL;
 
 int player_index = -1;
 int cycles = 0;
