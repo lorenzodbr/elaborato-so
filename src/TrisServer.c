@@ -405,6 +405,7 @@ void wait_for_players()
 
                 // Executed only if execl fails;
                 // Prevent connected client from hanging
+                notify_server_quit();
                 exit(EXIT_FAILURE);
             } else if (fork_ret < 0) {
                 // Executed only if fork fails
