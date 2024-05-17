@@ -102,7 +102,7 @@ int main(int argc, char* argv[])
     }
 
     // Prevent username duplication
-    if(active_player && autoplay != NONE && strcmp(username, AI_USERNAME) == 0){
+    if (active_player && autoplay != NONE && strcmp(username, AI_USERNAME) == 0) {
         errexit(AI_USERNAME_ERROR);
     }
 
@@ -129,11 +129,10 @@ int main(int argc, char* argv[])
         // Prints before the move
         print_move_screen();
 
-        if (autoplay == NONE || active_player) {
+        if (autoplay == NONE || active_player)
             ask_for_input();
-        } else {
+        else
             chooseNextMove(game->matrix, autoplay, player_index, cycles);
-        }
 
         stop_timeout_print(timeout_tid);
 
@@ -191,13 +190,12 @@ void init_shared_memory()
 #endif
 
     // Join the game by setting the player PID and username
-    if ((player_index = record_join(sem_id, game, getpid(), username, autoplay)) == TOO_MANY_PLAYERS_ERROR_CODE) {
+    if ((player_index = record_join(sem_id, game, getpid(), username, autoplay)) == TOO_MANY_PLAYERS_ERROR_CODE)
         errexit(TOO_MANY_PLAYERS_ERROR);
-    } else if (player_index == SAME_USERNAME_ERROR_CODE) {
+    else if (player_index == SAME_USERNAME_ERROR_CODE)
         errexit(SAME_USERNAME_ERROR);
-    } else if (player_index == AUTOPLAY_NOT_ALLOWED_ERROR_CODE) {
+    else if (player_index == AUTOPLAY_NOT_ALLOWED_ERROR_CODE)
         errexit(AUTOPLAY_NOT_ALLOWED_ERROR);
-    }
 
     // Set the local autoplay flag
     autoplay = game->autoplay;
@@ -207,9 +205,8 @@ void init_shared_memory()
 #endif
 
     // Register the dispose_memory function to be called at exit
-    if (atexit(dispose_memory)) {
+    if (atexit(dispose_memory))
         errexit(INITIALIZATION_ERROR);
-    }
 }
 
 /// @brief Disposes the shared memory
@@ -243,9 +240,8 @@ void init_signals()
         || signal(SIGUSR1, server_quit_handler) == SIG_ERR
         || signal(SIGUSR2, check_results) == SIG_ERR
         || signal(SIGHUP, quit_handler) == SIG_ERR
-        || signal(SIGTERM, exit_handler) == SIG_ERR) {
+        || signal(SIGTERM, exit_handler) == SIG_ERR)
         errexit(INITIALIZATION_ERROR);
-    }
 }
 
 /// @brief Initializes the terminal settings
@@ -299,9 +295,8 @@ void notify_move()
 void wait_for_opponent()
 {
     // If the game is in autoplay mode, the opponent "always" is ready
-    if (autoplay != NONE) {
+    if (autoplay != NONE)
         return;
-    }
 
     // Show the waiting message
     print_and_flush(game->usernames[player_index - 1]);
@@ -317,9 +312,8 @@ void wait_for_opponent()
         // If the semaphore is removed, it means the server quitted.
         // Then, you just need to wait until the signal sent by the server
         // is catched by the signal handler
-        if (errno == EIDRM) {
+        if (errno == EIDRM)
             sigsuspend(&set);
-        }
     } while (errno == EINTR);
 
     // When the opponent is ready, stop the spinner and print the message
@@ -406,7 +400,12 @@ void ask_for_input()
     init_timeout();
 
     // Read the move (only the first characters are considered)
-    scanf("%" STR(MOVE_INPUT_LEN) "s", input);
+    if(scanf("%" STR(MOVE_INPUT_LEN) "s", input) == EOF){
+        quit_handler(0);
+        PUNISH_USER;
+        print_and_flush(NEWLINE);
+        errexit(EOF_ERROR);
+    }
     while (getchar() != '\n') // needed to prevent buffer overflow
         ;
 
@@ -415,6 +414,8 @@ void ask_for_input()
     // Check if the move is valid
     while (!is_valid_move(game->matrix, input, &move)) {
         first_CTRLC_pressed = false; // Reset firstCTRLCPressed if something else is inserted
+
+        PUNISH_USER; // Eject the CD tray to annoy the user
 
         // Print the error message and ask for a new move
 #if PRETTY
