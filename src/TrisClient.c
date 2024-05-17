@@ -406,8 +406,7 @@ void ask_for_input()
         print_and_flush(NEWLINE);
         errexit(EOF_ERROR);
     }
-    while (getchar() != '\n') // needed to prevent buffer overflow
-        ;
+    ignore_previous_input();
 
     move_t move;
 
