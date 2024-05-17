@@ -117,7 +117,7 @@ int main(int argc, char* argv[])
 
     if (player_index != INITIAL_TURN) {
         print_move_screen();
-        print_and_flush(OPPONENT_TURN_MESSAGE);
+        printf(OPPONENT_TURN_MESSAGE, game->usernames[player_index == PLAYER_ONE ? PLAYER_TWO : PLAYER_ONE]);
         print_and_flush(HIDE_CARET);
     }
 
@@ -140,7 +140,8 @@ int main(int argc, char* argv[])
 
         // Prints after the move
         print_move_screen();
-        print_and_flush(OPPONENT_TURN_MESSAGE);
+
+        printf(OPPONENT_TURN_MESSAGE, game->usernames[player_index == PLAYER_ONE ? PLAYER_TWO : PLAYER_ONE]);
 
         set_input(&without_echo);
         print_and_flush(HIDE_CARET);
@@ -391,7 +392,7 @@ void ask_for_input()
     show_input(without_echo);
 
     // Print the input message shifting it to the right by the length of the timeout
-    print_spaces((digits(game->timeout) + 3) * (game->timeout != 0));
+    print_spaces((digits(game->timeout) + 2) * (game->timeout != 0));
 #endif
 
     printf(INPUT_A_MOVE_MESSAGE);
