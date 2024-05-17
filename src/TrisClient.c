@@ -101,6 +101,11 @@ int main(int argc, char* argv[])
         errexit(USERNAME_TOO_SHORT_ERROR);
     }
 
+    // Prevent username duplication
+    if(active_player && autoplay != NONE && strcmp(username, AI_USERNAME) == 0){
+        errexit(AI_USERNAME_ERROR);
+    }
+
     // Initialize the client
     init();
 

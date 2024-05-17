@@ -128,8 +128,12 @@
 #define EASY 1
 #define MEDIUM 2
 #define HARD 3
+#define AI_USERNAME "AI"
 
 // ----------------- MESSAGES ----------------
+
+#define STR2(x) #x
+#define STR(X) STR2(X)
 
 // General messages
 #define GAME_SETTINGS_MESSAGE FCYN INFO_CHAR "Impostazioni:\n" FNRM
@@ -209,6 +213,7 @@
 #define USERNAME_TOO_LONG_ERROR "Il nome utente non può superare i 30 caratteri."
 #define USERNAME_TOO_SHORT_ERROR "Il nome utente deve contenere almeno 2 caratteri."
 #define AUTOPLAY_NOT_ALLOWED_ERROR "Non è possibile giocare in modalità AI con un altro giocatore già collegato."
+#define AI_USERNAME_ERROR "Il nome utente 'AI' è riservato per la modalità AI. Scegli un altro nome."
 
 // Error codes
 #define TOO_MANY_PLAYERS_ERROR_CODE -1
