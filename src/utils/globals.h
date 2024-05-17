@@ -64,7 +64,7 @@ void init_pids(int*);
 int record_join(int, tris_game_t*, int, char*, int);
 void set_pid_at(int, int*, int, int);
 void record_quit(tris_game_t*, int);
-int get_pid(int*, int);
+int get_pid_at(int*, int);
 bool is_valid_move(int*, char*, move_t*);
 int is_game_ended(int*);
 int minimax(int*, int, bool);
@@ -451,7 +451,7 @@ void record_quit(tris_game_t* game, int index)
 /// @param pids_pointer The pointer to the array of pids
 /// @param index The index to get the pid from
 /// @return The pid at the specified index
-int get_pid(int* pids_pointer, int index)
+int get_pid_at(int* pids_pointer, int index)
 {
     // no need to use semaphores here, as only the server read from this buffer,
     // and it does this only after clients have written to it and notified the server

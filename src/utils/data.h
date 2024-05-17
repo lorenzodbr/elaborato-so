@@ -11,7 +11,7 @@
 
 // ----------------- DEBUG ------------------
 
-#define DEBUG 1
+#define DEBUG 0
 #define PRETTY 1
 
 // Args
@@ -245,4 +245,4 @@
 #define FORK_ERROR "Errore durante la creazione di un processo figlio."
 
 // Exec errors
-#define EXEC_ERROR "\n\n" ERROR_CHAR "Errore durante l'esecuzione del client automatico. Assicurati che i due eseguibili siano presenti nella stessa cartella.\n"
+#define EXEC_ERROR "\n\n" ERROR_CHAR "Errore durante l'esecuzione del client automatico. Assicurati che i due eseguibili siano presenti nella stessa cartella."

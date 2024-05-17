@@ -276,7 +276,7 @@ void show_input()
     ignore_previous_input();
     print_and_flush(SHOW_CARET);
 
-#if DEBUG
+#if DEBUG && PRETTY
     printf(OUTPUT_RESTORED_SUCCESS);
 #endif
 }
@@ -369,6 +369,11 @@ void player_quit_handler(int sig)
 
     // If the game has already started, this means that the player who quitted loses
     if (started) {
+        if(game->autoplay != NONE && player_who_quitted == PLAYER_TWO) {
+            notify_server_quit();
+            exit(EXIT_FAILURE);
+        }
+
         game->result = QUIT;
         printf("\n" WINS_PLAYER_MESSAGE, player_who_stayed_color,
             player_who_stayed, game->usernames[player_who_stayed]);
@@ -403,9 +408,7 @@ void wait_for_players()
                 // Execute the client
                 execl("./bin/TrisClient", "./TrisClient", "AI", NULL);
 
-                // Executed only if execl fails;
-                // Prevent connected client from hanging
-                notify_server_quit();
+                // Executed only if execl fails
                 exit(EXIT_FAILURE);
             } else if (fork_ret < 0) {
                 // Executed only if fork fails
@@ -413,6 +416,18 @@ void wait_for_players()
                 notify_server_quit();
                 errexit(FORK_ERROR);
             } else {
+                do {
+                    errno = 0;
+                    wait_semaphore(sem_id, WAIT_FOR_PLAYERS, 1);
+                } while (errno == EINTR);
+
+                // Check if the AI client got executed or failed
+                if(get_pid_at(game->pids, PLAYER_TWO) == 0) {
+                    notify_server_quit();
+                    print_and_flush(EXEC_ERROR);
+                    exit(EXIT_FAILURE);
+                }
+
                 // If the server is in autoplay mode, print the message
                 printf(AUTOPLAY_ENABLED_MESSAGE);
 

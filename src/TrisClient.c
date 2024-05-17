@@ -270,7 +270,7 @@ void show_input()
 
     print_and_flush(SHOW_CARET);
 
-#if DEBUG
+#if DEBUG && PRETTY
     printf(OUTPUT_RESTORED_SUCCESS);
 #endif
 }
