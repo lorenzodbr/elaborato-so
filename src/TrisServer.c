@@ -405,8 +405,7 @@ void wait_for_players()
                 // Prevent the client from writing to the same stdout of the server
                 close(STDOUT_FILENO);
 
-                // Execute the client
-                execl("./bin/TrisClient", "./TrisClient", "AI", NULL);
+                execl("./bin/TrisClient", "TrisClient", "AI", NULL);
 
                 // Executed only if execl fails
                 exit(EXIT_FAILURE);

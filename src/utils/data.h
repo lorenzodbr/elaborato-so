@@ -79,13 +79,8 @@
 #define PERM 0600
 
 // Keys
-#define MATRIX_ID 163
-#define PID_ID 110
-#define SEM_ID 213
-#define RESULT_ID 313
-#define SYMBOLS_ID 413
-#define TIMEOUT_ID 513
-#define GAME_ID 613
+#define SEM_ID 885684
+#define GAME_ID 434784
 #define FTOK_PATH ".config"
 
 // Semaphore indexes
@@ -245,4 +240,4 @@
 #define FORK_ERROR "Errore durante la creazione di un processo figlio."
 
 // Exec errors
-#define EXEC_ERROR "\n\n" ERROR_CHAR "Errore durante l'esecuzione del client automatico. Assicurati che i due eseguibili siano presenti nella stessa cartella."
+#define EXEC_ERROR "\n\n" ERROR_CHAR "Errore durante l'esecuzione del client automatico. Assicurati che i due eseguibili siano presenti nella stessa cartella.\n"
