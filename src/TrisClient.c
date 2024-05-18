@@ -120,6 +120,10 @@ int main(int argc, char* argv[])
     }
 
     do {
+        // Reset the firstCTRLCPressed flag
+        // if the user inserted something
+        first_CTRLC_pressed = false;
+
         wait_for_move();
 
         print_and_flush(SHOW_CARET);
