@@ -450,8 +450,8 @@ void wait_for_players()
                 case MEDIUM:
                     printf(MEDIUM_MODE_MESSAGE);
                     break;
-                case HARD:
-                    printf(HARD_MODE_MESSAGE);
+                case IMPOSSIBLE:
+                    printf(IMPOSSIBLE_MODE_MESSAGE);
                     break;
                 }
 

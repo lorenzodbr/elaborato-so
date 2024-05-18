@@ -77,9 +77,9 @@ int main(int argc, char* argv[])
     if (argc == N_ARGS_CLIENT + 1) {
         int check_easy = strcmp(argv[2], EASY_AI_CHAR);
         int check_medium = strcmp(argv[2], MEDIUM_AI_CHAR);
-        int check_hard = strcmp(argv[2], HARD_AI_CHAR);
+        int check_impossible = strcmp(argv[2], IMPOSSIBLE_AI_CHAR);
 
-        if (check_easy != 0 && check_medium != 0 && check_hard != 0) {
+        if (check_easy != 0 && check_medium != 0 && check_impossible != 0) {
             printf(USAGE_ERROR_CLIENT, argv[0]);
             exit(EXIT_FAILURE);
         } else if (check_easy == 0)
@@ -87,7 +87,7 @@ int main(int argc, char* argv[])
         else if (check_medium == 0)
             autoplay = MEDIUM;
         else
-            autoplay = HARD;
+            autoplay = IMPOSSIBLE;
 
         active_player = true;
     }

@@ -635,7 +635,7 @@ void chooseNextMove(int* game_matrix, int difficulty, int player_index, int cycl
     case MEDIUM:
         chooseRandomOrBestMove(game_matrix, player_index, cycles);
         return;
-    case HARD:
+    case IMPOSSIBLE:
         chooseBestMove(game_matrix, player_index);
     }
 }

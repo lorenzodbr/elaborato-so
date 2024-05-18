@@ -11,7 +11,7 @@
 
 // ----------------- DEBUG ------------------
 
-#define DEBUG 1
+#define DEBUG 0
 #define PRETTY 1
 
 // Args
@@ -71,7 +71,7 @@
 #define MATRIX_TOP_ROW "\n      A   B   C\n\n"
 #define EASY_AI_CHAR "*"
 #define MEDIUM_AI_CHAR "**"
-#define HARD_AI_CHAR "***"
+#define IMPOSSIBLE_AI_CHAR "***"
 #define CLIENT_EXEC_NAME "TrisClient"
 #define SERVER_EXEC_NAME "TrisServer"
 #define AI_USERNAME "AI"
@@ -130,7 +130,7 @@
 #define NONE 0
 #define EASY 1
 #define MEDIUM 2
-#define HARD 3
+#define IMPOSSIBLE 3
 
 // ----------------- MACROS ------------------
 
@@ -185,7 +185,7 @@
 #define AUTOPLAY_ENABLED_MESSAGE "\n" INFO_CHAR "Modalità AI attivata"
 #define EASY_MODE_MESSAGE " (" FGRN "facile" FNRM ")"
 #define MEDIUM_MODE_MESSAGE " (" FYEL "media" FNRM ")"
-#define HARD_MODE_MESSAGE " (" FRED "difficile" FNRM ")"
+#define IMPOSSIBLE_MODE_MESSAGE " (" FRED "impossibile" FNRM ")"
 
 // General success messages
 #define SERVER_FOUND_SUCCESS FGRN SUCCESS_CHAR "Trovato TrisServer con PID = %d\n" FNRM
