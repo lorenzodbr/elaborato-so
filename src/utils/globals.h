@@ -398,16 +398,15 @@ int record_join(int sem_id, tris_game_t* game, int pid, char* username, int auto
     wait_semaphore(sem_id, PID_LOCK, 1);
     for (int i = 1; i < PID_ARRAY_LEN; i++) {
         if (game->pids[i] == 0) {
-            int otherPlayerIndex = i == 1 ? 2 : 1;
+            int otherPlayerIndex = i == PLAYER_ONE ? PLAYER_TWO : PLAYER_ONE;
 
             if (strcmp(username, game->usernames[otherPlayerIndex]) == 0) {
                 player_index = SAME_USERNAME_ERROR_CODE;
                 break;
             }
 
-            if (autoplay != NONE) {
+            if (autoplay != NONE)
                 game->autoplay = autoplay;
-            }
 
             game->pids[i] = pid;
             player_index = i;
@@ -472,25 +471,21 @@ bool is_valid_move(int* matrix, char* input, move_t* move)
 {
     // the input is valid if it is in the format [A-C or a-c],[1-3]
 
-    if (strlen(input) != 2) {
+    if (strlen(input) != 2)
         return false;
-    }
 
-    if (((input[0] < 'A' || input[0] > 'C') && (input[0] < 'a' || input[0] > 'c')) || input[1] < '1' || input[1] > '3') {
+    if (((input[0] < 'A' || input[0] > 'C') && (input[0] < 'a' || input[0] > 'c')) || input[1] < '1' || input[1] > '3')
         return false;
-    }
 
     move->row = input[0] - 'A';
 
-    if (input[0] >= 'a' && input[0] <= 'c') {
+    if (input[0] >= 'a' && input[0] <= 'c')
         move->row = input[0] - 'a';
-    }
 
     move->col = input[1] - '1';
 
-    if (matrix[move->col * MATRIX_SIDE_LEN + move->row] != 0) {
+    if (matrix[move->col * MATRIX_SIDE_LEN + move->row] != 0)
         return false;
-    }
 
     return true;
 }
@@ -545,9 +540,8 @@ int minimax(int* game_matrix, int depth, bool is_maximizing)
     if (result == DRAW)
         return DRAW;
 
-    if (result != NOT_FINISHED) {
+    if (result != NOT_FINISHED)
         return result == PLAYER_TWO ? 1 : -1;
-    }
 
     if (is_maximizing) {
         int best_val = INT_MIN;

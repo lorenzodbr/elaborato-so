@@ -82,31 +82,27 @@ int main(int argc, char* argv[])
         if (check_easy != 0 && check_medium != 0 && check_hard != 0) {
             printf(USAGE_ERROR_CLIENT, argv[0]);
             exit(EXIT_FAILURE);
-        } else if (check_easy == 0) {
+        } else if (check_easy == 0)
             autoplay = EASY;
-        } else if (check_medium == 0) {
+        else if (check_medium == 0)
             autoplay = MEDIUM;
-        } else {
+        else
             autoplay = HARD;
-        }
 
         active_player = true;
     }
 
     // Check if the username length is correct
     username = argv[1];
-    if (strlen(username) > USERNAME_MAX_LEN) {
+    if (strlen(username) > USERNAME_MAX_LEN)
         errexit(USERNAME_TOO_LONG_ERROR);
-    }
 
-    if (strlen(username) < USERNAME_MIN_LEN) {
+    if (strlen(username) < USERNAME_MIN_LEN)
         errexit(USERNAME_TOO_SHORT_ERROR);
-    }
 
     // Prevent username duplication
-    if (active_player && autoplay != NONE && strcmp(username, AI_USERNAME) == 0) {
+    if (active_player && autoplay != NONE && strcmp(username, AI_USERNAME) == 0)
         errexit(AI_USERNAME_ERROR);
-    }
 
     // Initialize the client
     init();
@@ -181,9 +177,8 @@ void init_shared_memory()
     game_id = get_shared_memory(GAME_SIZE, GAME_ID);
 
     // If the shared memory getter returns -1, then no server is running
-    if (game_id < 0) {
+    if (game_id < 0)
         errexit(NO_SERVER_FOUND_ERROR);
-    }
 
     // Otherwise, attach the shared memory
     game = (tris_game_t*)attach_shared_memory(game_id);
@@ -337,9 +332,8 @@ void wait_for_move()
         // If the semaphore is removed, it means the server quitted.
         // Then, you just need to wait until the signal sent by the server
         // is catched by the signal handler
-        if (errno == EIDRM) {
+        if (errno == EIDRM)
             sigsuspend(&set);
-        }
     } while (errno == EINTR);
 
     // Flush the input buffer to prevent buffer overflow
@@ -360,9 +354,8 @@ void timeout_handler(int sig)
 void init_timeout()
 {
     // If the timeout is set to 0, do nothing
-    if (game->timeout == 0) {
+    if (game->timeout == 0)
         return;
-    }
 
     // Set the timeout handler
     alarm(game->timeout);
@@ -376,9 +369,8 @@ void init_timeout()
 void reset_timeout()
 {
     // If the timeout is set to 0, do nothing
-    if (game->timeout == 0) {
+    if (game->timeout == 0)
         return;
-    }
 
     // Reset the timeout
     alarm(0);
@@ -403,7 +395,7 @@ void ask_for_input()
     init_timeout();
 
     // Read the move (only the first characters are considered)
-    if(scanf("%" STR(MOVE_INPUT_LEN) "s", input) == EOF){
+    if (scanf("%" STR(MOVE_INPUT_LEN) "s", input) == EOF) {
         quit_handler(0);
         PUNISH_USER;
         print_and_flush(NEWLINE);
@@ -455,15 +447,14 @@ void check_results(int sig)
     print_move_screen();
 
     // Check the result of the game
-    if (game->result == DRAW) {
+    if (game->result == DRAW)
         print_and_flush(DRAW_MESSAGE);
-    } else if (game->result == QUIT) {
+    else if (game->result == QUIT)
         print_and_flush(YOU_WON_FOR_QUIT_MESSAGE);
-    } else if (game->result != player_index) {
+    else if (game->result != player_index)
         print_and_flush(YOU_LOST_MESSAGE);
-    } else {
+    else
         print_and_flush(YOU_WON_MESSAGE);
-    }
 
     exit(EXIT_SUCCESS);
 }
@@ -486,9 +477,8 @@ void exit_handler(int sig)
     first_CTRLC_pressed = true;
     printf(CTRLC_AGAIN_TO_QUIT_MESSAGE);
 
-    if (started) {
+    if (started)
         printf(THIS_WAY_YOU_WILL_LOSE_MESSAGE);
-    }
 
     fflush(stdout);
 }

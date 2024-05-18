@@ -11,9 +11,8 @@
 int get_and_init_shared_memory(int size, int id)
 {
     int shm_id = shmget(id, size, IPC_CREAT | PERM);
-    if (shm_id < 0) {
+    if (shm_id < 0)
         errexit(SHARED_MEMORY_ALLOCATION_ERROR);
-    }
 
 #if DEBUG
     printf(SHARED_MEMORY_OBTAINED_SUCCESS, shm_id);
@@ -31,9 +30,8 @@ int get_shared_memory(int size, int id)
 
 void dispose_shared_memory(int shm_id)
 {
-    if (shmctl(shm_id, IPC_RMID, NULL) < 0) {
+    if (shmctl(shm_id, IPC_RMID, NULL) < 0)
         errexit(SHARED_MEMORY_DEALLOCATION_ERROR);
-    }
 
 #if DEBUG
     printf("\n" SHARED_MEMORY_DEALLOCATION_SUCCESS);
@@ -43,9 +41,8 @@ void dispose_shared_memory(int shm_id)
 void* attach_shared_memory(int shm_id)
 {
     void* addr = shmat(shm_id, NULL, 0);
-    if (addr == (void*)-1) {
+    if (addr == (void*)-1)
         errexit(SHARED_MEMORY_ATTACH_ERROR);
-    }
 
 #if DEBUG
     printf(SHARED_MEMORY_ATTACHED_SUCCESS, addr);
@@ -56,9 +53,8 @@ void* attach_shared_memory(int shm_id)
 
 void detach_shared_memory(void* addr)
 {
-    if (shmdt(addr) < 0) {
+    if (shmdt(addr) < 0)
         errexit(SHARED_MEMORY_DETACH_ERROR);
-    }
 }
 
 bool is_another_server_running(int* game_id, tris_game_t** game)
@@ -69,16 +65,14 @@ bool is_another_server_running(int* game_id, tris_game_t** game)
     *game_id = get_shared_memory(0, GAME_ID);
 
     // if the shared memory does not exist, no server is running
-    if (*game_id < 0) {
+    if (*game_id < 0)
         return false;
-    }
 
     // if the shared memory exists, check if the set pid corresponds to a running process
     *game = (tris_game_t*)attach_shared_memory(*game_id);
 
-    if (kill((*game)->pids[SERVER], 0) < 0) {
+    if (kill((*game)->pids[SERVER], 0) < 0)
         return false;
-    }
 
     return true;
 }
