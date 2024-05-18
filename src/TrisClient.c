@@ -307,11 +307,10 @@ void wait_for_opponent()
         errno = 0;
         wait_semaphore(sem_id, WAIT_FOR_OPPONENT_READY, 1);
 
-        // If the semaphore is removed, it means the server quitted.
-        // Then, you just need to wait until the signal sent by the server
-        // // is catched by the signal handler
-        // if (errno == EIDRM)
-        //     sigsuspend(&set);
+        // If the semaphore is removed bofore starting the game
+        // it means the server quitted, so the client exits too
+        if (errno == EIDRM)
+            server_quit_handler(0);
     } while (errno == EINTR);
 
     // When the opponent is ready, stop the spinner and print the message
@@ -329,11 +328,15 @@ void wait_for_move()
         errno = 0;
         wait_semaphore(sem_id, PLAYER_ONE_TURN + player_index - 1, 1);
 
-        // If the semaphore is removed, it means the server quitted.
-        // Then, you just need to wait until the signal sent by the server
-        // is catched by the signal handler
-        // if (errno == EIDRM)
-        //     sigsuspend(&set);
+        // If the semaphore is removed, could mean that the server quitted,
+        // or that the game is finished and server got executed before the handler
+        // in client. Hence, you need to check the game result
+        if (errno == EIDRM) {
+            if (game->result == NOT_FINISHED)
+                server_quit_handler(0);
+            else
+                check_results(0);
+        }
     } while (errno == EINTR);
 
     // Flush the input buffer to prevent buffer overflow

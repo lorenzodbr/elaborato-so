@@ -203,6 +203,7 @@ void init_shared_memory()
     }
 
     // Initialize variables
+    game->result = NOT_FINISHED;
     game->autoplay = NONE;
     init_board(game->matrix);
     init_pids(game->pids);
