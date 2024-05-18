@@ -158,8 +158,8 @@ void init()
     print_loading_message();
 
     // Initialize IPCs and terminal settings
-    init_semaphores();
     init_shared_memory();
+    init_semaphores();
     init_signals();
     init_terminal_settings();
 
@@ -188,7 +188,7 @@ void init_shared_memory()
 #endif
 
     // Join the game by setting the player PID and username
-    if ((player_index = record_join(sem_id, game, getpid(), username, autoplay)) == TOO_MANY_PLAYERS_ERROR_CODE)
+    if ((player_index = record_join(game, getpid(), username, autoplay)) == TOO_MANY_PLAYERS_ERROR_CODE)
         errexit(TOO_MANY_PLAYERS_ERROR);
     else if (player_index == SAME_USERNAME_ERROR_CODE)
         errexit(SAME_USERNAME_ERROR);
@@ -309,9 +309,9 @@ void wait_for_opponent()
 
         // If the semaphore is removed, it means the server quitted.
         // Then, you just need to wait until the signal sent by the server
-        // is catched by the signal handler
-        if (errno == EIDRM)
-            sigsuspend(&set);
+        // // is catched by the signal handler
+        // if (errno == EIDRM)
+        //     sigsuspend(&set);
     } while (errno == EINTR);
 
     // When the opponent is ready, stop the spinner and print the message
@@ -332,8 +332,8 @@ void wait_for_move()
         // If the semaphore is removed, it means the server quitted.
         // Then, you just need to wait until the signal sent by the server
         // is catched by the signal handler
-        if (errno == EIDRM)
-            sigsuspend(&set);
+        // if (errno == EIDRM)
+        //     sigsuspend(&set);
     } while (errno == EINTR);
 
     // Flush the input buffer to prevent buffer overflow

@@ -62,7 +62,7 @@ void ignore_previous_input();
 bool init_output_settings(struct termios*, struct termios*);
 void init_board(int*);
 void init_pids(int*);
-int record_join(int, tris_game_t*, int, char*, int);
+int record_join(tris_game_t*, int, char*, int);
 void set_pid_at(int, int*, int, int);
 void record_quit(tris_game_t*, int);
 int get_pid_at(int*, int);
@@ -385,7 +385,7 @@ void init_pids(int* pids_pointer)
 /// @param username The username of the player
 /// @param autoplay The autoplay mode
 /// @return The index of the player in the game struct, or an error code
-int record_join(int sem_id, tris_game_t* game, int pid, char* username, int autoplay)
+int record_join(tris_game_t* game, int pid, char* username, int autoplay)
 {
     // Block all (catchable) signals in order to prevent deadlocks;
     // They will be re-enabled in init_signals() function in clients
@@ -394,6 +394,8 @@ int record_join(int sem_id, tris_game_t* game, int pid, char* username, int auto
     sigprocmask(SIG_BLOCK, &mask, NULL);
 
     int player_index = TOO_MANY_PLAYERS_ERROR_CODE;
+
+    int sem_id = get_semaphores(N_SEM);
 
     wait_semaphore(sem_id, PID_LOCK, 1);
     for (int i = 1; i < PID_ARRAY_LEN; i++) {

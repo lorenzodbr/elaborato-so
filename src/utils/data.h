@@ -11,7 +11,7 @@
 
 // ----------------- DEBUG ------------------
 
-#define DEBUG 0
+#define DEBUG 1
 #define PRETTY 1
 
 // Args
