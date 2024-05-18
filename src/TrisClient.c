@@ -18,13 +18,13 @@
 #include "utils/shared_memory/shared_memory.h"
 
 void init();
-void notify_player_ready();
-void notify_move();
 void init_shared_memory();
 void init_semaphores();
+void init_signals();
 void ask_for_input();
 void wait_for_opponent();
-void init_signals();
+void notify_player_ready();
+void notify_move();
 void exit_handler(int);
 void quit_handler(int);
 void check_results(int);

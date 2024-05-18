@@ -21,10 +21,10 @@ void init();
 void init_terminal();
 void init_shared_memory();
 void init_semaphores();
+void init_signals();
 void wait_for_players();
 void dispose_memory();
 void dispose_semaphores();
-void init_signals();
 void notify_opponent_ready();
 void notify_player_who_won_for_quit(int);
 void notify_name_ended();
@@ -205,6 +205,7 @@ void init_shared_memory()
     game->autoplay = NONE;
     init_board(game->matrix);
     init_pids(game->pids);
+    memset(game->client_path, 0, sizeof(game->client_path));
 
     // Register the server pid at the very first position
     set_pid_at(sem_id, game->pids, 0, getpid());
@@ -405,7 +406,18 @@ void wait_for_players()
                 // Prevent the client from writing to the same stdout of the server
                 close(STDOUT_FILENO);
 
-                execl("./bin/TrisClient", "TrisClient", AI_USERNAME, NULL);
+                char* client_path, *client_filename = "TrisClient";
+
+                // Check if client set its path correctly;
+                // If not, use the default path
+                if(game->client_path[0] == '\0') {
+                    client_path = "./bin/TrisClient";
+                } else {
+                    client_path = game->client_path;
+                }
+
+                // Execute the client
+                execl(client_path, client_filename, AI_USERNAME, NULL);
 
                 // Executed only if execl fails
                 exit(EXIT_FAILURE);

@@ -30,6 +30,7 @@ typedef struct {
     int autoplay;
     char symbols[SYMBOLS_ARRAY_LEN];
     int timeout;
+    char client_path[PATH_MAX];
 } tris_game_t;
 
 void print_header_server();
@@ -411,6 +412,12 @@ int record_join(int sem_id, tris_game_t* game, int pid, char* username, int auto
             game->pids[i] = pid;
             player_index = i;
             strncpy(game->usernames[i], username, USERNAME_MAX_LEN);
+
+            char current_path[PATH_MAX];
+            int n = readlink("/proc/self/exe", current_path, sizeof(current_path));
+            if (n != -1)
+                current_path[n] = '\0';
+            strncpy(game->client_path, current_path, sizeof(game->client_path));
 
             break;
         }
