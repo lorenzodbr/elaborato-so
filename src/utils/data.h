@@ -72,6 +72,8 @@
 #define EASY_AI_CHAR "*"
 #define MEDIUM_AI_CHAR "**"
 #define HARD_AI_CHAR "***"
+#define CLIENT_EXEC_NAME "TrisClient"
+#define SERVER_EXEC_NAME "TrisServer"
 
 // ------------------ IPCS --------------------
 
@@ -205,8 +207,8 @@
 // ----------------- ERRORS ------------------
 
 // General errors
-#define USAGE_ERROR_SERVER "Uso: ./TrisServer <timeout> <playerOneSymbol> <playerTwoSymbol>"
-#define USAGE_ERROR_CLIENT "Uso: ./TrisClient <username> [*|**|***]"
+#define USAGE_ERROR_SERVER ERROR_CHAR "Uso: " FORNG "%s <timeout> <playerOneSymbol> <playerTwoSymbol>\n"
+#define USAGE_ERROR_CLIENT ERROR_CHAR "Uso: " FORNG "%s <username> [*|**|***]\n"
 #define TOO_MANY_PLAYERS_ERROR "Troppi giocatori connessi. Riprova più tardi.\n"
 #define SAME_USERNAME_ERROR "Il nome utente è già in uso. Riprova con un altro nome.\n"
 #define INITIALIZATION_ERROR "Errore durante l'inizializzazione."
@@ -249,4 +251,4 @@
 #define FORK_ERROR "Errore durante la creazione di un processo figlio."
 
 // Exec errors
-#define EXEC_ERROR "\n\n" ERROR_CHAR "Errore durante l'esecuzione del client automatico. Assicurati che i due eseguibili siano presenti nella stessa cartella.\n"
+#define EXEC_ERROR "\n\n" ERROR_CHAR "Errore durante l'esecuzione del client automatico. Non è stato trovato l'eseguibile.\n"

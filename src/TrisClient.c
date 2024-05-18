@@ -68,7 +68,8 @@ int main(int argc, char* argv[])
 {
     // Check if the number of arguments is correct
     if (argc != N_ARGS_CLIENT + 1 && argc != N_ARGS_CLIENT) {
-        errexit(USAGE_ERROR_CLIENT);
+        printf(USAGE_ERROR_CLIENT, argv[0]);
+        exit(EXIT_FAILURE);
     }
 
     // if user wants to play against the AI,
@@ -79,7 +80,8 @@ int main(int argc, char* argv[])
         int check_hard = strcmp(argv[2], HARD_AI_CHAR);
 
         if (check_easy != 0 && check_medium != 0 && check_hard != 0) {
-            errexit(USAGE_ERROR_CLIENT);
+            printf(USAGE_ERROR_CLIENT, argv[0]);
+            exit(EXIT_FAILURE);
         } else if (check_easy == 0) {
             autoplay = EASY;
         } else if (check_medium == 0) {

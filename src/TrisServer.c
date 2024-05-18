@@ -63,7 +63,8 @@ int main(int argc, char* argv[])
 {
     // Check arguments
     if (argc != N_ARGS_SERVER + 1) {
-        errexit(USAGE_ERROR_SERVER);
+        printf(USAGE_ERROR_SERVER, argv[0]);
+        exit(EXIT_FAILURE);
     }
 
     // Initialization
@@ -406,7 +407,7 @@ void wait_for_players()
                 // Prevent the client from writing to the same stdout of the server
                 close(STDOUT_FILENO);
 
-                char* client_path, *client_filename = "TrisClient";
+                char* client_path;
 
                 // Check if client set its path correctly;
                 // If not, use the default path
@@ -417,7 +418,7 @@ void wait_for_players()
                 }
 
                 // Execute the client
-                execl(client_path, client_filename, AI_USERNAME, NULL);
+                execl(client_path, CLIENT_EXEC_NAME, AI_USERNAME, NULL);
 
                 // Executed only if execl fails
                 exit(EXIT_FAILURE);
