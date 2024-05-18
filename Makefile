@@ -1,6 +1,6 @@
 CC = gcc
-#CFLAGS = -Wall -pedantic -g -fsanitize=address -lpthread
-CFLAGS = -Wall -pedantic -lpthread
+CFLAGS = -Wall -pedantic -g -fsanitize=address -lpthread
+#CFLAGS = -Wall -pedantic -lpthread
 SERVER_SRC = src/TrisServer.c
 CLIENT_SRC = src/TrisClient.c
 SERVER_OBJ = obj/TrisServer.o

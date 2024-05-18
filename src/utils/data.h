@@ -74,6 +74,7 @@
 #define HARD_AI_CHAR "***"
 #define CLIENT_EXEC_NAME "TrisClient"
 #define SERVER_EXEC_NAME "TrisServer"
+#define AI_USERNAME "AI"
 
 // ------------------ IPCS --------------------
 
@@ -130,7 +131,6 @@
 #define EASY 1
 #define MEDIUM 2
 #define HARD 3
-#define AI_USERNAME "AI"
 
 // ----------------- MACROS ------------------
 

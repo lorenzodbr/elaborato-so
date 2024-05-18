@@ -410,7 +410,7 @@ void wait_for_players()
                 char* client_path;
 
                 // Check if client set its path correctly;
-                // If not, use the default path
+                // If not, try to use the default path
                 if(game->client_path[0] == '\0') {
                     client_path = "./bin/TrisClient";
                 } else {
@@ -436,8 +436,7 @@ void wait_for_players()
                 // Check if the AI client got executed or failed
                 if(get_pid_at(game->pids, PLAYER_TWO) == 0) {
                     notify_server_quit();
-                    print_and_flush(EXEC_ERROR);
-                    exit(EXIT_FAILURE);
+                    errexit(EXEC_ERROR);
                 }
 
                 // If the server is in autoplay mode, print the message
