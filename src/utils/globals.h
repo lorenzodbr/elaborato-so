@@ -407,15 +407,21 @@ int record_join(tris_game_t* game, int pid, char* username, int autoplay)
                 break;
             }
 
-            if (autoplay != NONE)
-                game->autoplay = autoplay;
+            if (autoplay != NONE){
+                if(game->pids[otherPlayerIndex] != 0){
+                    player_index = AUTOPLAY_NOT_ALLOWED_ERROR_CODE;
+                    break;
+                } else {
+                    game->autoplay = autoplay;
+                }
+            }
 
             game->pids[i] = pid;
             player_index = i;
             strncpy(game->usernames[i], username, USERNAME_MAX_LEN);
 
             char current_path[PATH_MAX];
-            int n = readlink("/proc/self/exe", current_path, sizeof(current_path));
+            int n = readlink(SELF_EXEC_PATH, current_path, sizeof(current_path));
             if (n != -1)
                 current_path[n] = '\0';
             strncpy(game->client_path, current_path, sizeof(game->client_path));

@@ -75,6 +75,7 @@
 #define CLIENT_EXEC_NAME "TrisClient"
 #define SERVER_EXEC_NAME "TrisServer"
 #define AI_USERNAME "AI"
+#define SELF_EXEC_PATH "/proc/self/exe"
 
 // ------------------ IPCS --------------------
 
@@ -134,7 +135,7 @@
 
 // ----------------- MACROS ------------------
 
-#define PUNISH_USER system("eject")
+// #define PUNISH_USER system("eject")
 #define STR2(x) #x
 #define STR(X) STR2(X)
 

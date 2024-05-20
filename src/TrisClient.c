@@ -404,7 +404,7 @@ void ask_for_input()
     // Read the move (only the first characters are considered)
     if (scanf("%" STR(MOVE_INPUT_LEN) "s", input) == EOF) {
         quit_handler(0);
-        PUNISH_USER;
+        // PUNISH_USER;
         print_and_flush(NEWLINE);
         errexit(EOF_ERROR);
     }
@@ -416,7 +416,7 @@ void ask_for_input()
     while (!is_valid_move(game->matrix, input, &move)) {
         first_CTRLC_pressed = false; // Reset firstCTRLCPressed if something else is inserted
 
-        PUNISH_USER; // Eject the CD tray to annoy the user
+        // PUNISH_USER; // Eject the CD tray to annoy the user
 
         // Print the error message and ask for a new move
 #if PRETTY
