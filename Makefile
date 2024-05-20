@@ -3,34 +3,25 @@ CFLAGS = -Wall -pedantic -g -fsanitize=address -lpthread
 #CFLAGS = -Wall -pedantic -lpthread
 SERVER_SRC = src/TrisServer.c
 CLIENT_SRC = src/TrisClient.c
-SERVER_OBJ = obj/TrisServer.o
-CLIENT_OBJ = obj/TrisClient.o
 SERVER_BIN = bin/TrisServer
 CLIENT_BIN = bin/TrisClient
+AUX_FUNCTIONS = src/utils/data.h src/utils/globals.c src/utils/semaphores/semaphores.c src/utils/shared_memory/shared_memory.c
 
 all: $(SERVER_BIN) $(CLIENT_BIN)
 
-$(SERVER_BIN): $(SERVER_OBJ)
-	@echo "Linking $@..."
+$(SERVER_BIN): $(SERVER_SRC) $(AUX_FUNCTIONS)
+	@echo "Compiling $@..."
 	@$(CC) $(CFLAGS) -o $@ $^
 	@echo "Done."
 
-$(CLIENT_BIN): $(CLIENT_OBJ)
-	@echo "Linking $@..."
+$(CLIENT_BIN): $(CLIENT_SRC) $(AUX_FUNCTIONS)
+	@echo "Compiling $@..."
 	@$(CC) $(CFLAGS) -o $@ $^
 	@echo "Done."
-
-$(SERVER_OBJ): $(SERVER_SRC)
-	@echo "Compiling $@..."
-	@$(CC) $(CFLAGS) -c -o $@ $^
-
-$(CLIENT_OBJ): $(CLIENT_SRC)
-	@echo "Compiling $@..."
-	@$(CC) $(CFLAGS) -c -o $@ $^
 
 .PHONY: clean
 
 clean:
 	@echo "Cleaning..."
-	@rm -f $(SERVER_OBJ) $(SERVER_BIN) $(CLIENT_OBJ) $(CLIENT_BIN)
+	@rm -f $(SERVER_BIN) $(CLIENT_BIN)
 	@echo "Done."

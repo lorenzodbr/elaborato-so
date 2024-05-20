@@ -11,10 +11,13 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
+#include <termios.h>
+#include <string.h>
 
 #include "utils/data.h"
 #include "utils/globals.h"
 #include "utils/shared_memory/shared_memory.h"
+#include "utils/semaphores/semaphores.h"
 
 void parse_args(int, char*[]);
 void init();

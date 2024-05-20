@@ -12,10 +12,12 @@
 #include <termios.h>
 #include <time.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "utils/data.h"
 #include "utils/globals.h"
 #include "utils/shared_memory/shared_memory.h"
+#include "utils/semaphores/semaphores.h"
 
 void init();
 void init_shared_memory();

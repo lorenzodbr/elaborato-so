@@ -4,6 +4,9 @@
  * 09/05/2024
  ************************************/
 
+#ifndef DATA_H
+#define DATA_H
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -253,3 +256,5 @@
 
 // Exec errors
 #define EXEC_ERROR "\n\n" ERROR_CHAR "Errore durante l'esecuzione del client automatico. Non è stato trovato l'eseguibile.\n"
+
+#endif
