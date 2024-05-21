@@ -194,7 +194,7 @@ void init_shared_memory()
 #endif
 
     // Join the game by setting the player PID and username
-    if ((player_index = record_join(game, getpid(), username, autoplay)) == TOO_MANY_PLAYERS_ERROR_CODE)
+    if ((player_index = record_join(game, username, autoplay)) == TOO_MANY_PLAYERS_ERROR_CODE)
         errexit(TOO_MANY_PLAYERS_ERROR);
     else if (player_index == SAME_USERNAME_ERROR_CODE)
         errexit(SAME_USERNAME_ERROR);

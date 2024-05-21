@@ -1,9 +1,8 @@
 #ifndef SHARED_MEMORY_H
 #define SHARED_MEMORY_H
 
-#include "../globals.h"
-
 #include <stdbool.h>
+#include "../globals.h"
 
 int get_and_init_shared_memory(int, int);
 int get_shared_memory(int, int);

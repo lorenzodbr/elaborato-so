@@ -56,7 +56,7 @@ void ignore_previous_input();
 bool init_output_settings(struct termios*, struct termios*);
 void init_board(int*);
 void init_pids(int*);
-int record_join(tris_game_t*, int, char*, int);
+int record_join(tris_game_t*, char*, int);
 void set_pid_at(int, int*, int, int);
 void record_quit(tris_game_t*, int);
 int get_pid_at(int*, int);

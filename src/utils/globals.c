@@ -345,7 +345,7 @@ void init_pids(int* pids_pointer)
 /// @param username The username of the player
 /// @param autoplay The autoplay mode
 /// @return The index of the player in the game struct, or an error code
-int record_join(tris_game_t* game, int pid, char* username, int autoplay)
+int record_join(tris_game_t* game, char* username, int autoplay)
 {
     // Block all (catchable) signals in order to prevent deadlocks;
     // They will be re-enabled in init_signals() function in clients
@@ -367,19 +367,27 @@ int record_join(tris_game_t* game, int pid, char* username, int autoplay)
                 break;
             }
 
-            if (autoplay != NONE) {
-                if (game->pids[otherPlayerIndex] != 0) {
-                    player_index = AUTOPLAY_NOT_ALLOWED_ERROR_CODE;
+            // Check if someone else already wanted to autoplay
+            if (game->autoplay != NONE) {
+                // Only AI client is allowed to occupy a slot with
+                // an already joined client who wanted to autoplay
+                if (strcmp(username, AI_USERNAME) != 0) {
+                    player_index = TOO_MANY_PLAYERS_ERROR_CODE;
                     break;
-                } else {
-                    game->autoplay = autoplay;
                 }
             }
 
-            game->pids[i] = pid;
+            // Check if user wants to autoplay
+            if (autoplay != NONE) {
+                game->autoplay = autoplay;
+            }
+
+            // Copy pid, index and username
+            game->pids[i] = getpid();
             player_index = i;
             strncpy(game->usernames[i], username, USERNAME_MAX_LEN);
 
+            // Copy the path of the client (might be needed by the server)
             char current_path[PATH_MAX];
             int n = readlink(SELF_EXEC_PATH, current_path, sizeof(current_path));
             if (n != -1)
