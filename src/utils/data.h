@@ -138,7 +138,6 @@
 
 // ----------------- MACROS ------------------
 
-// #define PUNISH_USER system("eject")
 #define STR2(x) #x
 #define STR(X) STR2(X)
 

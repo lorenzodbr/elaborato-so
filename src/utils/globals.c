@@ -354,32 +354,35 @@ int record_join(tris_game_t* game, char* username, int autoplay)
     sigprocmask(SIG_BLOCK, &mask, NULL);
 
     int player_index = TOO_MANY_PLAYERS_ERROR_CODE;
-
     int sem_id = get_semaphores(N_SEM);
 
     wait_semaphore(sem_id, PID_LOCK, 1);
     for (int i = 1; i < PID_ARRAY_LEN; i++) {
         if (game->pids[i] == 0) {
-            int otherPlayerIndex = i == PLAYER_ONE ? PLAYER_TWO : PLAYER_ONE;
+            int other_player_index = i == PLAYER_ONE ? PLAYER_TWO : PLAYER_ONE;
 
-            if (strcmp(username, game->usernames[otherPlayerIndex]) == 0) {
+            if (strcmp(username, game->usernames[other_player_index]) == 0) {
                 player_index = SAME_USERNAME_ERROR_CODE;
                 break;
             }
 
-            // Check if someone else already wanted to autoplay
-            if (game->autoplay != NONE) {
-                // Only AI client is allowed to occupy a slot with
-                // an already joined client who wanted to autoplay
-                if (strcmp(username, AI_USERNAME) != 0) {
-                    player_index = TOO_MANY_PLAYERS_ERROR_CODE;
-                    break;
-                }
-            }
-
             // Check if user wants to autoplay
             if (autoplay != NONE) {
-                game->autoplay = autoplay;
+                // Check if someone else already wanted to autoplay
+                if (game->autoplay != NONE) {
+                    // Only AI client is allowed to occupy a slot with
+                    // an already joined client who wanted to autoplay
+                    if (strcmp(username, AI_USERNAME) != 0) {
+                        player_index = TOO_MANY_PLAYERS_ERROR_CODE;
+                        break;
+                    }
+                }
+
+                if (game->pids[other_player_index] != 0) {
+                    player_index = AUTOPLAY_NOT_ALLOWED_ERROR_CODE;
+                    break;
+                } else
+                    game->autoplay = autoplay;
             }
 
             // Copy pid, index and username

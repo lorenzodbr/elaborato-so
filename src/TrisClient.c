@@ -9,15 +9,15 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <termios.h>
 #include <time.h>
 #include <unistd.h>
-#include <string.h>
 
 #include "utils/data.h"
 #include "utils/globals.h"
-#include "utils/shared_memory/shared_memory.h"
 #include "utils/semaphores/semaphores.h"
+#include "utils/shared_memory/shared_memory.h"
 
 void init();
 void init_shared_memory();
@@ -127,19 +127,18 @@ int main(int argc, char* argv[])
         first_CTRLC_pressed = false;
 
         wait_for_move();
-
         print_and_flush(SHOW_CARET);
 
         // Prints before the move
         print_move_screen();
 
+        // If user is ``human'' ask for input
         if (autoplay == NONE || active_player)
             ask_for_input();
-        else
+        else // Otherwise, choose the next move
             chooseNextMove(game->matrix, autoplay, player_index, cycles);
 
         stop_timeout_print(timeout_tid);
-
         notify_move();
 
         // Prints after the move
@@ -406,7 +405,6 @@ void ask_for_input()
     // Read the move (only the first characters are considered)
     if (scanf("%" STR(MOVE_INPUT_LEN) "s", input) == EOF) {
         quit_handler(0);
-        // PUNISH_USER;
         print_and_flush(NEWLINE);
         errexit(EOF_ERROR);
     }
@@ -417,8 +415,6 @@ void ask_for_input()
     // Check if the move is valid
     while (!is_valid_move(game->matrix, input, &move)) {
         first_CTRLC_pressed = false; // Reset firstCTRLCPressed if something else is inserted
-
-        // PUNISH_USER; // Eject the CD tray to annoy the user
 
         // Print the error message and ask for a new move
 #if PRETTY
