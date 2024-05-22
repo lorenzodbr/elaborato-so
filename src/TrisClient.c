@@ -391,7 +391,7 @@ void ask_for_input()
 
 #if PRETTY
     // Restore the terminal settings
-    show_input(without_echo);
+    set_input(&without_echo);
 
     // Print the input message shifting it to the right by the length of the timeout
     print_spaces((digits(game->timeout) + 2) * (game->timeout != 0));
@@ -467,6 +467,9 @@ void check_results(int sig)
 /// @brief Handles the player controlled exit
 void exit_handler(int sig)
 {
+    if(!active_player && autoplay != NONE)
+        return;
+
     if (!started)
         stop_loading_spinner(&spinner_tid);
 
