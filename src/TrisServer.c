@@ -332,7 +332,7 @@ void print_result()
 void quit_handler(int sig)
 {
     // If the server quits, tell the clients (if still connected)
-    printf(CLOSING_MESSAGE);
+    print_and_flush(CLOSING_MESSAGE);
     notify_server_quit();
     exit(EXIT_SUCCESS);
 }
