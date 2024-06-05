@@ -391,7 +391,7 @@ void ask_for_input()
 
 #if PRETTY
     // Restore the terminal settings
-    set_input(&without_echo);
+    set_input(&with_echo);
 
     // Print the input message shifting it to the right by the length of the timeout
     print_spaces((digits(game->timeout) + 2) * (game->timeout != 0));
