@@ -15,7 +15,7 @@
 // ----------------- DEBUG ------------------
 
 #define DEBUG 0
-#define PRETTY 0
+#define PRETTY 1
 
 // Args
 #define N_ARGS_SERVER 3
