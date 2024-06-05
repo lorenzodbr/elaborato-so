@@ -291,6 +291,9 @@ void ignore_previous_input()
 {
 #if PRETTY
     tcflush(STDIN_FILENO, TCIFLUSH);
+#else
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF) { }
 #endif
 }
 
