@@ -6,6 +6,7 @@
 
 #include "semaphore.h"
 #include "../data.h"
+#include "../globals.h"
 
 #include <errno.h>
 #include <sys/ipc.h>

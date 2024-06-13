@@ -16,6 +16,7 @@
 #include <string.h>
 #include <termios.h>
 #include <unistd.h>
+#include <errno.h>
 
 // --------- MATH ---------
 
@@ -289,11 +290,7 @@ int set_input(struct termios* policy)
 /// @brief Ignore the input entered before the function call but not consumed
 void ignore_previous_input()
 {
-#if PRETTY
     tcflush(STDIN_FILENO, TCIFLUSH);
-#else
-    system("stty cbreak");
-#endif
 }
 
 /// @brief Initialize and get the terminal settings for the output
