@@ -10,11 +10,13 @@ AUX_FUNCTIONS = src/utils/data.h src/utils/globals.c src/utils/semaphores/semaph
 all: $(SERVER_BIN) $(CLIENT_BIN)
 
 $(SERVER_BIN): $(SERVER_SRC) $(AUX_FUNCTIONS)
+	@mkdir -p bin
 	@echo "Compiling $@..."
 	@$(CC) $(CFLAGS) -o $@ $^
 	@echo "Done."
 
 $(CLIENT_BIN): $(CLIENT_SRC) $(AUX_FUNCTIONS)
+	@mkdir -p bin
 	@echo "Compiling $@..."
 	@$(CC) $(CFLAGS) -o $@ $^
 	@echo "Done."
