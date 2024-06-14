@@ -1,3 +1,9 @@
+/************************************
+ * VR487434 - Lorenzo Di Berardino
+ * VR486588 - Filippo Milani
+ * 09/05/2024
+ ************************************/
+
 #ifndef SEMAPHORES_H
 #define SEMAPHORES_H
 
