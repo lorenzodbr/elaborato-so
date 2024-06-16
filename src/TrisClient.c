@@ -420,9 +420,18 @@ void ask_for_input()
 #if PRETTY
         print_spaces((digits(game->timeout) + 3) * (game->timeout != 0));
 #endif
+
         print_error(INVALID_MOVE_ERROR);
-        scanf("%s", input);
+        
+        ignore_previous_input();
+        if (scanf("%" STR(MOVE_INPUT_LEN) "s", input) == EOF) {
+            quit_handler(0);
+            print_and_flush(NEWLINE);
+            errexit(EOF_ERROR);
+        }
     }
+
+    ignore_previous_input();
 
     // Update the matrix with the new move
     game->matrix[move.row + move.col * MATRIX_SIDE_LEN] = player_index;
@@ -467,7 +476,7 @@ void check_results(int sig)
 /// @brief Handles the player controlled exit
 void exit_handler(int sig)
 {
-    if(!active_player && autoplay != NONE)
+    if (!active_player && autoplay != NONE)
         return;
 
     if (!started)
